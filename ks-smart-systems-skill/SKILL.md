@@ -14,43 +14,97 @@ metadata:
 ## When is used
 Whenever user asks to do something with its home or company automation that is based on KS Smart Systems. Demand could be something like "Turn on the light in the living room", "Turn off heater in the dining room." , "Make lights more red in the penthouse", "Get me temperature from the terrace"
 
-## Additional documentation
-All of necessary documentation is supplied to the skill in `skill path`/docs
+## Exact script structure
+
+### General rules
+- Arguments in human readable form or HRF should be used by agent in order to determine property.
+- Programmable variable controls behavior of component, but it should not be updated by agent, except in cases when user ask it explicitly.
+- Force variable is used whenever user ask of agent to change value of the component, this variable should be affected(updated).
+- Index of component on physical device in not useful to the agent
+- Epoch variable argument. Agent should affect this variable only if user demands it explicitly. In regards of exact component, this variable could mean different things.
+  - in case of sensors, this variable holds value in seconds of pause length in between two readings(those readings does not affect agent in any way)
+  - in case of serial program, this variable holds value in seconds of activity of one switch, after this period passes, switch that is presently on is going to turn off, and next one is going to turn on.
+
+### Script components explanation
+- header example: 1("First floor", "1f", [MASTER])
+  - 1 is node index
+  - "First floor" is location explanation in HRF that should be used by agent in order to determine location
+  - "1f" is short node name
+  - MASTER is type of node
+- sensor example: sensor("temp", 0, $e1, $res01)
+  - sensor is declaration keyword
+  - "temp" is HRF sensor name.
+  - 0 is index of the sensor on physical node itself
+  - $e1 is epoch variable
+  - $res01 is reading variable. if agent needs to read value from the sensor, it is going to read value from this variable
+- switch example: switch("light0", 0, $c1, $f1)
+  - switch is declaration keyword
+  - "light0" is HRF switch name.
+  - 0 is switch index on physical device
+  - $c1 is programmable variable. 
+  - $f1 is force variable.
+- trigger example: trigger("heaterValue", 0, $t1, $ft1)
+  - trigger is declaration keyword
+  - "heaterValue" is HRF name of the trigger
+  - 0 is index of the trigger on physical device
+  - $t1 is programmable variable
+  - $ft1 is force variable
+- list example list("lista", 1, $lv, $ln, $l1, $lf1)
+  - list is is declaration keyword
+  - "lista" is HRF name of the list
+  - 1 is index of the component on physical device.
+  - $lv is list of indices
+  - $ln is list of names(list of names is list of string values in human readable form directly related to list of indices from $lv)
+  - $l1 selected index. Programmable variable
+  - $lf1 selected index. Force variable
+
+### Script program explanation
+- valCondition program(in text also could be referred as value condition program) example: ```valCondition(
+            "light on",
+            $lightsON == 1,
+            $c1 = 1
+        );```
+  - valCondition is declaration keyword
+  - "light on" is HRF name of the program
+  -  conditions. Multiple conditions can be provided to a single value condition program, single condition per line. Condition lines are located between `,` after functio HRF name and the next `,` Condition example:  `$lightsON == 1`
+    - $lightsON is left side of the statement and it holds name of variable that is going to be compared with variable or value from the right side
+    - == is condition operator. == means equals to, > means greater than, < means less than
+    - 1 is value on the right side of the expression that is compared with variable from the left side.
+  - after second `,` there are results. There can be multiple results, result per line. Example of result `$c1 = 1`. This means that if all of provided conditions are met, value of $c1 variable is going to be set to 1.
+- timeLim program or as it can be referred as time limit. Example timeLim($lightsON, $start, $end);
+  - timeLim is declaration keyword
+  - $lightsON is functional variable that is going to be affected by the program
+  - $start is string variable that holds starting time provided in 24 hours format
+  - $end is string variable that holds ending time provided in 24 hours format
+  - when present time is in between starting and ending time, variable $lightsON is going to be set to 1 by the program, otherwise, value of this variable is going to be set to 0.
+- serial program. Example: serial("entire row", $listOfSwitches, $switchEp, $time, $lastIndex);
+  - serial is declaration keyword 
+  - "entire row" is HRF name
+  - $listOfSwitches is variable of type array that holds programmable variables of switches that are going to be affected by the program.
+  - $switchEp is epoch variable
+  - $time is timestamp variable. Integer variable, always initialized with 0 value.
+  - $lastIndex is integer variable that holds the last active switch of this program by the index from $listOfSwitches
 
 ## App functions
-App can take 20 different commands with or without arguments in order to process user's request. Arguments are provided in the way `command` `firstArgument` `secondArgument`; examples `write-variable 1 $var1 25`, `change-list-value 3 $newVal 2`. Down is provided list of functions(commands) with arguments.
+App can take 16 different commands with or without arguments in order to process user's request. Arguments are provided in the way `command` `firstArgument` `secondArgument`; examples `write-variable 1 $var1 25`, `change-list-value 3 $newVal 2`. Down is provided list of functions(commands) with arguments.
 
 1. **write-variable** sets a new value to existing variable.
    1. index of node where variable is located
    2. name of variable itself
    3. new value.
 
-2. **change-trigger-value** sets new value for a trigger.
-    1. index of node where trigger is located
-    2. name of trigger itself
-    3. new trigger value.
-
-3. **change-list-value** sets new list selected index.
-    1. index of node where list is located
-    2. name of list itself
-    3. new index value to be selected
-
-4. **turn-switch** changes value from 0 to 1 and vice versa on selected switch.
-    1. index of node where switch is located
-    2. name of the switch itself
-
-5. **create-variable** creates new variable.
+2. **create-variable** creates new variable.
     1. index of node where variable is located
     2. Name of the variables(must start with $)
     3. Boolean argument that says whether variable is global or not; can be True or False
     4. variable type; can be int, string, fun, array, float
     5. value for the new variable
 
-6. **remove-variable**(index, name) removes variable.
+3. **remove-variable**(index, name) removes variable.
     1. index of node where variable is located
     2. name of the variable
 
-7. **add-value-condition-program** creates value condition program; sort of if else statement for .kst script.
+4. **add-value-condition-program** creates value condition program; sort of if else statement for .kst script.
     1. index of node where program is located
     2. name of the program in human readable form
     3. number of conditions
@@ -69,21 +123,21 @@ App can take 20 different commands with or without arguments in order to process
         5. sign(operation); can be > < =
     7. function name. this is used only if you want to have some variable that refers entire function. Default value is `None`
 
-8. **remove-value-condition-program** removes val condition program
+5. **remove-value-condition-program** removes val condition program
     1. index of node where the program is located
     2. name of program itself
 
-9. **add-time-limit-program** creates new time limit program.
+6. **add-time-limit-program** creates new time limit program.
     1. index of node where the program is located
-    2. name of program itself
+    2. functional variable that is going to hold the state
     3. string variable that holds starting time
     4. string variable that holds ending time
 
-10. **remove-time-limit-program** removes time limit program
+7. **remove-time-limit-program** removes time limit program
     1. index of node where the program is located
     2. name of program itself
 
-11. **add-serial-program** creates new serial program.
+8. **add-serial-program** creates new serial program.
     1. index of node where the program is located
     2. name of program itself
     3. array variable that holds list of switches
@@ -92,33 +146,29 @@ App can take 20 different commands with or without arguments in order to process
     6. last selected index. this is basically the starting point
     7. function variable in the case when you need some function that is going to refer entire program. Default value is `None`
 
-12. **remove-serial-program** removes serial program.
+9. **remove-serial-program** removes serial program.
     1. index of node
     2. name of the program
 
-13. **get-sensor-readings** returns readings from the sensor
-    1. index of the node
-    2. name of the sensor
-
-14. **read-var** reads variable
+10. **read-var** reads variable
     1. node index
     2. variable name
 
-15. **read-node-count** returns number of existing nodes. No arguments needed.
+11. **read-node-count** returns number of existing nodes. No arguments needed.
 
-16. **read-programs** reads all of programs from the node.
+12. **read-programs** reads all of programs from the node.
     1. node index
 
-17. **read-elements** reads all of elements from the node.
+13. **read-elements** reads all of elements from the node.
     1. node index
 
-18. **read-sensors** _reads all of sensors from the node
+14. **read-sensors** _reads all of sensors from the node
     1. node index
 
-19. **read-variables** reads all of variables from the node
+15. **read-variables** reads all of variables from the node
     1. node index
 
-20. **read-header** reads header from the node
+16. **read-header** reads header from the node
     1. node index
 
 ## Script path and execution
@@ -131,8 +181,8 @@ In front of every $, you must use \ like \$
 When is necessary to from one node to affect global variable from another node, naming convention needs to be followed.
     - in node x, global variable $y from node with index of z must be named like `$z$y`. Example of naming variable $var from node 4 in node 1 is `$4$var`. Example of naming variable $var from node 3 in node 6 is `$3$var`. So the rule is $ than index of node of origin, than full variable name.
 
-## Variables named by agent
-When agent has to create variable, this naming convention must be followed. Agent will always name its variables as $agent and then first available index like `$agent1`, `$agent2`, `$agent3` and so on, so that name of the variable will always be unique on the node level.
+## Variables named by agent rule
+When agent has to create variable, this **naming convention** must be followed. Agent will always name its variables as $agent and then first available index like `$agent1`, `$agent2`, `$agent3` and so on, so that name of the variable will always be unique on the node level.
 
 ## How to initialize service
 1. You are going to use `client.py` from Script PATH with python like `python PATH/client.py`. As first argument, you are always going to provide port number 11111. For second argument and on, you are going to use app functions and its arguments; for example, command would look like `python PATH/client.py 11111 read-variables 1`
@@ -155,11 +205,11 @@ Arguments to client.py are passed in cli, not programming style, so if 2 argumen
     - if user wants some sequential switching, usually deal is with serial program
     - if user wants to have some value or event affected by time, time limit should be used
     - if user wants some value to affect some other value, val conditions should be used
-3. What variables to affect? If user wants to create some program that is to affect the system, then programmable variables should be used. In case when user wants to make some direct change in regards of elements, force variable should be used. Difference is explained in docs directory, elements document.
+3. What variables to affect? If user wants to create some program that is to affect the system, then programmable variables should be used. In case when user wants to make some direct change in regards of elements, force variable should be used.
 4. When all previous steps are done, agent must know all nodes(names and indices) and all of variables that should be affected by the action.
 
 ## Specific situations
-    - It could happen that user don't specify location. In this case, when necessary, agent should ask explicitly for location, but in another case, agent should look through all nodes in order to determine exact location.
+  - It could happen that user don't specify location. In this case, when necessary, agent should ask explicitly for location, but in another case, agent should look through all nodes in order to determine exact location.
 
 ## Program handling core rules
 
@@ -174,7 +224,8 @@ Program names for programs `valCondition` and `serial` are mandatory. If user do
 
 ### Serial program pause rule
 If user needs some pause in between two switches, that can't be done directly but by using certain procedure. First of all, if value of pause is divided by value of the epoch, the result must be integer. Variable of type integer with default value of 0 must be created for the purpose of pause(dummy variable). In switching array, whenever pause is necessary, name of dummy variable is going to be placed; name of dummy variable is going to be placed (length of pause)/epoch times.
-    - example: if user wants serial program to affect switches light 1 and light 2 where epoch value is 2 seconds, and user wants pause of 2 seconds in between light 1 and light 2, and user needs pause of 6 seconds after light 2 is done, switching array for this program is going to be like(taking into account that programmable variable for light 1 is named `$ss1` and for light 2 is `$ss2`. In this same case, dummy variable is named `$pause`) `$ss1`, `$pause`, `$ss2`, `$pause`, `$pause`,`$pause`; so in this case we are going to get, light 1 that is going to be turned on for 2 seconds, than 2 seconds pause, than 2 seconds light 2 is going go be turned on, and finally we are going to have 3 pauses of 2 seconds each.
+  - example: if user wants serial program to affect switches light 1 and light 2 where epoch value is 2 seconds, and user wants pause of 2 seconds in between light 1 and light 2, and user needs pause of 6 seconds after light 2 is done, switching array for this program is going to be like(taking into account that programmable variable for light 1 is named `$ss1` and for light 2 is `$ss2`. In this same case, dummy variable is named `$pause`) `$ss1`, `$pause`, `$ss2`, `$pause`, `$pause`,`$pause`; so in this case we are going to get, light 1 that is going to be turned on for 2 seconds, than 2 seconds pause, than 2 seconds light 2 is going go be turned on, and finally we are going to have 3 pauses of 2 seconds each.
+  - in order to make pause, epoch variable for the program can't be changed. The only way to approach to solution is through dummy variable as explained in this rule.
 
 ### Serial program multiplication of active state rule
 If user needs some switch to be active longer that others, same principle like in serial program pause rule. Once again, length of activity of one switch, when divided by epoch, must be integer. So, if user needs light 1(programmable variable name `$ss1`) to be active for 2 seconds and light 2(programmable variable name `$ss2`) to be active for 4 seconds in case when epoch value is 2 seconds, switching array would look like `$ss1`, `$ss2`, `$ss2`.
@@ -191,30 +242,39 @@ If user needs some switch to be active longer that others, same principle like i
        - next is epoch variable, of course integer that is going to hold pause length in seconds
        - time stamp, again integer with value of 0
        - function variable, default value is None.
+       - when user demand to create serial program, agent is going to create new serial program except if user explicitly demands to update existing
+          - array of switches, or epoch from another serial program can't be reused, but dedicated variable for the new program must be created.
     - For value condition program
         - function name and that only if user ask for it explicitly 
 
+## How to determine property
+- if user wants something to switch or to turn to on or off, that usually relates to some switch
+- if user wants to read some value or get readings, that usually relates to sensors
+- if user wants to switch some state or to select some other options among multiple, that usually relates to lists
+- switching of two different states, usually relates to switch, multiple states relates to list
+- if user wants to send some value or to set some value to be send, that usually relates to trigger
+- if user wants to set or change some value if some other value changes in regards of some rule, usually relates to value condition program
+- if user wants to make some sequential switching, that usually refers to serial program
+- if user wants to turn something on in regards of time, time limit program should be used
+
 ## Exact procedure
 In all of cases, always first perform `Query analysis core rules`, and in case of programs `Program handling core rules` must be implemented too.
-1.  In case of switches user can say something like `Turn on first light in my living room`, `Switch the first light in livin room` or `Turn livin room light 1 off` or any variation of those.
-    - now, you need to be sure what user actually wants, and basically in here, you have two different options
-           - if he says that he wants to switch the light, than use command `turn-switch` and provide as arguments node index and switch name
-           - if he says that he needs switch turned on or off, use command `write-variable`
-2. In case of sensors, user can ask 3 different things.
+1.  In case of **switches** user can say something like `Turn on first light in my living room`, `Switch the first light in livin room` or `Turn livin room light 1 off` or any variation of those. Use command `write-variable` in order to set force variable of desired switch to wished value(0 for off and 1 for on).
+2. In case of sensors, agent must know that direct updating of values of sensors is off limits. In case of **sensors**, user can ask 3 different things.
     - User can ask you do deal with epoch in one of two ways
         - to update epoch value agent should use function `write-variable` with arguments of node index, epoch variable for the exact sensor and new value for this variable that user provided.
         - to read epoch value agent should use function `read-var` with arguments of node index and epoch variable for the exact sensor.
     - User can ask to read value from the sensor. If user asks something like, `I would like to know value`(temperature, intensity… or simply value) `from some sensor`; example: `Give me temperature on the first floor`.
         1. Agent should look for the fourth argument of the sensor because fourth argument is name of variable that holds reading values from the sensor.
-        2. Then agent should read value from the variable by using function read-var.
+        2. Then agent should read value from the variable by using function `read-var`.
     - user can also have some general question about sensors
         1. `Get me a list of sensors from some node` or similar; in which case agent should execute `read-sensors` function for that particular location-node.
         2. `Give me data about sensor that reads value greater, less, or equals of x` ; in this case agent should execute `read-sensors` on all nodes. Than for every reading variable of particular sensor to execute `read-var` in order to get value. If value fulfills user's condition(greater, less or equals to x, where x is some value provided by the user), data about that sensor should be returned to the user as result, alongside the rest of sensors that fulfill the same condition.
         3. Taking into account second example from `reading sensor` case, user doesn't have to look through sensors by reading value only. It can have conditions based on name of sensor or index on working unit(second argument), or even about epoch. User can ask something like `give me all sensors that deals with temperature`; in this case, agent should execute `read-sensors` function on all nodes and all sensors with name that have something to do with temperature(like `temp`, `temp01`, `temperature`,`temperature`,`temperature-sensor`, `temp-readings` ) should be returned to the user as the result.
-3. In case of variables
-    1. User can ask `I want all of variables on certain location or node`; in this case agent should execute `read-variables` with argument of node(locations) index in order to get list of all variables.
+3. In case of **variables**
+    1. User can ask `I want all of variables on certain location or node` ; in this case agent should execute `read-variables` with argument of node(locations) index in order to get list of all variables.
     2. User can have more specific demand like, getting variables under some condition like `all of variables of certain variable type` in what case, user should execute `read-variables` function with argument of node(location) index for certain node(if user demands variables only from one node) or for all nodes(if user wants variables from entire script. In this case, agent should specify at the end, what variable belongs to what node). User can also specify other conditions like local or global variables, arrays that hold certain elements, numerical value that is greater, less or equal to some specific value or string variable with some specific content.
-    3. User can ask you to create a new variable. In this case, agent should call function `create-variable`. For this function arguments, user must provide exact values. Agent must know index of node, where variable is created(first argument), variable name for second argument, `True` or `False` value for third argument(True if variable is global, False if variable is local), variable type for fourth argument and initial value for fifth argument.
+    3. User can ask you to create a new variable. In this case, agent should call function `create-variable`. For this function arguments, user must provide exact values. Agent must know index of node, where variable is created(first argument), variable name for second argument, `True` or `False` value for third argument(True if variable is global, False if variable is local), variable type for fourth argument and initial value for fifth argument. Variable is always going to be local except in case when that variable must be used in different node than one where is created.
     4. User can ask for existing variable deletion. However, for deletion, some conditions must be fulfilled in order not to break the system.
         1. If variable that user wants to delete is global, agent must check first:
             1. All of array type variables in the entire script by executing `read-variables` function. All of array variables that hold variable name for deletion as array member must be remembered for the future use.
@@ -227,7 +287,7 @@ In all of cases, always first perform `Query analysis core rules`, and in case o
         5. Before proceeding to variable deletion, the same variable must be remove from all of arrays where is contained as element. Agent should do that by updating array with new value, where variable for deletions is excluded. For this, function `write-variable` must be used.
         6. Variable deletion is going to be performed by calling function `remove-variable` with arguments of node index where variable for deletion is located and name of the variable itself.
     5.  User can ask to update value of existing variable. In this case `write-variable` function should be used with arguments of node index, existing variable name and new value respectively.
-4. In case of triggers. When user wants to deal with triggers, it is going to ask for some value to be transmitted or some value to be sent. Trigger is basically, value transmitted.
+4. In case of **triggers**. When user wants to deal with triggers, it is going to ask for some value to be transmitted or some value to be sent. Trigger is basically, value transmitted.
     1. User can ask for list of triggers. It can ask triggers from one node or from multiple if not all of nodes. Or it can ask for triggers by some specific condition. In all of cases, agent should use function `read-elements` and that from all of elements to take only trigger functions. If user wants triggers from one node, function `read-elements` should be executed only for node in question. If user wants triggers from multiple nodes, `read-elements` function should be executed for all necessary nodes. If user provide some condition, first all of triggers must be read from all of requested locations(nodes) and than from that list, must be removed all of triggers that are not fulfilling users conditions.
     2. User can ask about some specifics in regards of one trigger. Example `get me trigger value for red color component in light in bathroom`
         1. Start always with performing query analysis core rules on given case
@@ -237,7 +297,7 @@ In all of cases, always first perform `Query analysis core rules`, and in case o
         5. User can also ask about trigger index on the unit itself; in that case, agent should check second argument from the selected trigger.
     3. User can ask to update trigger value. If that is the case, agent should keep in check that if value of a trigger is updated directly, then that should be by using fourth argument of trigger function, or force value. So take variable name from fourth argument and use function `write-var` in order to update its value to value desired by the user.
 5. If user wants to handle lists, it is usually going to say something in regards of selection some option or changing some selection, or mode. In case of lists, all of steps like in case of triggers are the same, just apply it for lists instead of trigger. There is only one difference to take into consideration. Function list has 6 arguments instead of 4. Note that first and second argument in trigger and list are the same, fifth and sixth from list are the same as third and fourth from trigger. So only third and fourth argument of list function are new in here. Third argument of list function is array that holds indexes for selection(basically some range of numbers), while fourth argument is also array, but this array holds strings corresponding with numbers from previous array. In some cases, fourth argument can also hold numbers but the point is that arrays from third and fourth argument of list function must have the same number of arguments.
-6. Case of programs. You can find file programs.md in docs directory of the skill for more info.
+6. Case of programs.
     1. Program `serial` are generally used when user wants to have multiple switches turning on sequentially. User's demand could be something like
         -  `I want light in living room, then light on the balcony and light in bathroom to be turned on sequentially or one ofter the another.`
         -   `I need heater on firts pannel than heater on second pannel and then heater in bedroom to be turned one after the another.`
@@ -286,7 +346,7 @@ In all of cases, always first perform `Query analysis core rules`, and in case o
         - When all of values are prepared, agent should use function add-value-condition-program with all prepared following arguments.
     5.  User can ask of agent to remove some val condition program. When program that should be delete is determined, function remove-value-condition-program
     6.  User can ask of agent to make some correction in val condition program. The same like in previous case, agent should first find program that should be changed and what variable or value should be changed. Change is going to be achieved by changing value of variable that user wants to affect
-    7. User can ask to create time limit or timeLim program. This kind of program has purpose to change value of some fun variable in regards of time. Detail explanation is in docs but in simple words timeLim program has 3 arguments; first is functional variable that is affected by time, second is string representation of starting time and third is string representation of ending time.
+    7. User can ask to create time limit or timeLim program. This kind of program has purpose to change value of some fun variable in regards of time.
            - user can ask something like `I want light in the main holl to be turned on in between 2 and 4 am.` In order this program to be created, function add-time-limit-program must be used.
            - But in order for result that user requested to be achieved, agent must create two val condition programs. One that is going to set switch variable to 0 when functional variable from this time limit program turns to 1 and other that is going to be set switch programmable variable to 0 when functional variable from this time limit program gets to 0.
     8. Changes to time limit program can be done in the sense of changing value of starting and ending time. For that function write-variable must be used.

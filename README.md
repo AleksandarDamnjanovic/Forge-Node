@@ -8,6 +8,15 @@
 - As of jun 17. 2026, some bugs are fixed, AI integration is simplified, and video tutorials are published.
 - As of jun 18. 2026, AI skill supports more function. Future update are expected to finish AI program handling.
 - As of jun 19. 2026 architecture diagram added to the project and skill is updated so an agent will now know how to create serial program.
+- As of Jul 03. 2026,
+  - AI can handle all of system functionalities
+  - help section in AU is sorted
+  - function turn-switch is removed from the list of AU available functions
+  - AI can't use functions
+    - get-sensor-readings
+    - change-trigger-value
+    - change-list-value
+  - AI can still perform all of actions available by system, but with step by step method. Previously mentioned functions are removed for the sake of simplicity.
 
 ## Video tutorials
 1. [Basic explanations](https://youtu.be/n6Ak4GIscVg)
@@ -83,30 +92,29 @@ You can see that there is no confirmation for transmitter's value. That is becau
 
 Now, we are in completely different dimension. Now, we are talking about sending commands to AAU over the administrative channel, or how to communicate with AAU in commanding way 👮🏻
 
-At the moment, there are 20 functions that you can sent to admin channel on your mqtt server in order to make AAU to obey.
+At the moment, there are 19 functions that you can sent to admin channel on your mqtt server in order to make AAU to obey.
 
 In all of cases argument index is index of the node that is affected. name is actual element that is affected like switch or variable.
 
 1. **writeVar**(index, name, value) sets a new value to existing variable. *with value arguments, a new value is provided*
 2. **changeTriggerValue**(index, name, triggerValue) *with triggerValue argument, a new value for trigger is provided*
-3. **changeListValue**(index, name, listValue) *with listValue argument, new value from the list is selected. In here, you should not provide value for the trigger but index from the list*
-4. **turnSwitch**(index, name) *changes value from 0 to 1 and vice versa on selected switch*
-5. **createVariable**(index, name, globalVar, varType, varValue) *creates new variable. globalVar is boolean argument that says whether variable is global or not. varType sets variable type and varValue, starting value for the new variable*
-6. **removeVariable**(index, name) *removes variable with provided name from the node with provided index*
-7. **addValConditionProgram**(index, name, numOfConditions, numOfResults, 5 arguments for every condition, 5 arguments for every result, funVariableName) *this is the most complicated case because num of results and num of conditions is not fix. there are 5 arguments for every condition and result. left side, left type, right side, right tyle and sign*
-8. **removeValConditionProgram**(index, name) *removes val condition program by provided name and from node with provided index*
-9. **addTimeLimProgram**(index, name, start, end) *creates new time limit program where start and end are the starting and ending time*
-10. **removeTimeLimProgram**(index, name) *removes time limit program by privided name from node with provided index*
-11. **addSerialProgram**(index, name, listOfSwitches, epoh, lastIndex, functionName=None) *creates new serial program. Argument listOfSwitches must be array that holds all of switches that should be affected by this program. epoh is time when change is commited. first switch that is going to be activated is one after last index. function name is name of function variable that could be connected to this program and used in later code*
-12. **removeSerialProgram**(index, name) *removes serial program by provided name and from node with provided index*
-13. **getSensorReadings**(index, name) *returns readings from the sensor by provided name and from node by provided index*
-14. **readVar**(index, name) *reads variable by provided name and from node by provided index*
-15. **readNodeCount**() *returns number of existing nodes*
-16. r**eadPrograms**(index) *reads all of programs from the node-index*
-17. **readElements**(index) *reads all of elements from the node-index*
-18. **readSensors**(index) *reads all of sensors from the node-index*
-19. **readVariables**(index) *reads all of variables from the node-index*
-20. **readHeader**(index) *reads header from the node-index*
+3. **changeListValue**(index, name, listValue) *with listValue argument, new value from the list is selected. In here, you should not provide value for the trigger but index from the list
+4. **createVariable**(index, name, globalVar, varType, varValue) *creates new variable. globalVar is boolean argument that says whether variable is global or not. varType sets variable type and varValue, starting value for the new variable*
+5. **removeVariable**(index, name) *removes variable with provided name from the node with provided index*
+6. **addValConditionProgram**(index, name, numOfConditions, numOfResults, 5 arguments for every condition, 5 arguments for every result, funVariableName) *this is the most complicated case because num of results and num of conditions is not fix. there are 5 arguments for every condition and result. left side, left type, right side, right tyle and sign*
+7. **removeValConditionProgram**(index, name) *removes val condition program by provided name and from node with provided index*
+8. **addTimeLimProgram**(index, name, start, end) *creates new time limit program where start and end are the starting and ending time*
+9. **removeTimeLimProgram**(index, name) *removes time limit program by privided name from node with provided index*
+10. **addSerialProgram**(index, name, listOfSwitches, epoh, lastIndex, functionName=None) *creates new serial program. Argument listOfSwitches must be array that holds all of switches that should be affected by this program. epoh is time when change is commited. first switch that is going to be activated is one after last index. function name is name of function variable that could be connected to this program and used in later code*
+11. **removeSerialProgram**(index, name) *removes serial program by provided name and from node with provided index*
+12. **getSensorReadings**(index, name) *returns readings from the sensor by provided name and from node by provided index*
+13. **readVar**(index, name) *reads variable by provided name and from node by provided index*
+14. **readNodeCount**() *returns number of existing nodes*
+15. r**eadPrograms**(index) *reads all of programs from the node-index*
+16. **readElements**(index) *reads all of elements from the node-index*
+17. **readSensors**(index) *reads all of sensors from the node-index*
+18. **readVariables**(index) *reads all of variables from the node-index*
+19. **readHeader**(index) *reads header from the node-index*
 
 ## KST Script
 
@@ -261,18 +269,15 @@ List of available AU commands:
     1. index of node where list is located
     2. name of list itself
     3. new index value to be selected
-4. **turn-switch** changes value from 0 to 1 and vice versa on selected switch.
-    1. index of node where switch is located
-    2. name of the switch itself
-5. **create-variable** creates new variable.
+4. **create-variable** creates new variable.
     1. index of node where variable is located
     2. Boolean argument that says whether variable is global or not; can be True or False
     3. variable type; can be int, string, fun, array, float
     4. value for the new variable
-6. **remove-variable**(index, name) removes variable.
+5. **remove-variable**(index, name) removes variable.
     1. index of node where variable is located
     2. name of the variable
-7. **add-value-condition-program** creates value condition program; sort of if else statement for .kst script.
+6. **add-value-condition-program** creates value condition program; sort of if else statement for .kst script.
     1. index of node where program is located
     2. name of the program in human readable form
     3. number of conditions
@@ -290,46 +295,46 @@ List of available AU commands:
         4. right side variable type
         5. sign(operation); can be > < =
     7. function name. this is used only if you want to have some variable that refers entire function. Default value is `None`
-8. **remove-value-condition-program** removes val condition program
+7. **remove-value-condition-program** removes val condition program
     1. index of node where the program is located
     2. name of program itself
-9. **add-time-limit-program** creates new time limit program.
+8. **add-time-limit-program** creates new time limit program.
     1. index of node where the program is located
     2. name of program itself
     3. string variable that holds starting time
     4. string variable that holds ending time
-10. **remove-time-limit-program** removes time limit program
+9. **remove-time-limit-program** removes time limit program
     1. index of node where the program is located
     2. name of program itself
-11. **add-serial-program** creates new serial program.
+10. **add-serial-program** creates new serial program.
     1. index of node where the program is located
     2. name of program itself
     3. array variable that holds list of switches
     4. epoch variable. this variable holds value in seconds of pause in between two activation(switching). After the epoch ends, next switch from the list of switches is going to be activated while all the rest are going to be shut down.
     5. last selected index. this is basically the starting point
     6. function variable in the case when you need some function that is going to refer entire program. Default value is `None`
-12. **remove-serial-program** removes serial program.
+11. **remove-serial-program** removes serial program.
     1. index of node
     2. name of the program
-13. **get-sensor-readings** returns readings from the sensor
+12. **get-sensor-readings** returns readings from the sensor
     1. index of the node
     2. name of the sensor
-14. **read-var** reads variable
+13. **read-var** reads variable
     1. node index
     2. variable name
-15. **read-node-count** returns number of existing nodes. No arguments needed.
-16. **read-programs** reads all of programs from the node.
+14. **read-node-count** returns number of existing nodes. No arguments needed.
+15. **read-programs** reads all of programs from the node.
     1. node index
-17. **read-elements** reads all of elements from the node.
+16. **read-elements** reads all of elements from the node.
     1. node index
-18. **read-sensors** _reads all of sensors from the node
+17. **read-sensors** _reads all of sensors from the node
     1. node index
-19. **read-variables** reads all of variables from the node
+18. **read-variables** reads all of variables from the node
     1. node index
-20. **read-header** reads header from the node
+19. **read-header** reads header from the node
     1. node index
 
 Although tcp mode is built for the purpose of AI integration and, possibly, APIs, you can use it manually with client.py from the same directory; if you want to do so, first make sure that both KS AAU and KS AU are running and then use python to run client.py with arguments of port number, AU is operating on, and, finally, command and command's arguments line in following example `python client.py 11111 write-variable 1 \$varName 1` or `python client.py 11111 exit`
 
 ## AI skill
-Skill is tested with Hermes and OpenCode. In order to install it, just copy entire skill directory to skill location of you agent. This directory contains SKILL.md and directories docs and scripts.
+Skill is tested with Hermes and OpenCode. In order to install it, just copy entire skill directory to skill location of you agent. It performs optimal with Gemma 4 4B; therefore with bigger models you can expect better experience. For the sake of simplicity, AI can't use AU functions get-sensor-readings, change-list-value and change-trigger-value; not that all counted functionalities are not supported by AI, but AI needs to use step by step method in order to achieve those.

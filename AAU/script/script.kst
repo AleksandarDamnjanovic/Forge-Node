@@ -36,7 +36,7 @@
     <elements>
         switch("light0", 0, $c1, $f1)
         switch("light1", 1, $c2, $f2)
-        trigger("TempValue", 0, $t1, $ft1)
+        trigger("heaterValue", 0, $t1, $ft1)
         list("lista", 1, $lv, $ln, $l1, $lf1)
     </elements>
 
