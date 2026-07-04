@@ -260,31 +260,6 @@ def changeTriggerValue(index, triggerName, triggerValue):
     else:
         return "ERROR"
 
-# 📎 this function affects only switches. when called it changes value of its force variable
-def turnSwitch(index, switchName):
-    n = support.factory.getNodeByIndex(int(index))
-    switch = n.getSwitchByName(switchName)
-    
-    if(switch==None):
-        text= f"switch with name of {switchName} on node with index {index} not existing"
-        logit(text, 2)
-        return text
-
-    var = switch.getForce()
-    val = n.getVariableValueByName(var)
-    val = int(val)
-    if val == 1:
-        writeVar(index, var, 0)
-    else:
-        writeVar(index, var, 1)
-
-    val1 = int(n.getVariableValueByName(var))
-
-    if str(val) != str(val1):
-        return "UPDATED"
-    else:
-        return "ERROR"
-
 # 📎 this function updates value of variable by providing node index, variable name and the new value
 def writeVar(index, varName, varValue):
     n = support.factory.getNodeByIndex(int(index))
@@ -303,6 +278,12 @@ def writeVar(index, varName, varValue):
         return errorText
     n.setVariableValueByName(varName, varValue)
     val = n.getVariableValueByName(varName)
+    if variable.getType()== "array":
+        tokens = varValue.split(",")
+        for i in range(0, len(val)):
+            if val[i] != tokens[i]:
+                return "ARRAY ERROR"
+        return "ARRAY UPDATED"
     if str(val) == str(varValue):
         return "UPDATED"
     else:

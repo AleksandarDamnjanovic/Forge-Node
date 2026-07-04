@@ -17,6 +17,7 @@
     - change-trigger-value
     - change-list-value
   - AI can still perform all of actions available by system, but with step by step method. Previously mentioned functions are removed for the sake of simplicity.
+- As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, aswel dealing with array values
 
 ## Video tutorials
 1. [Basic explanations](https://youtu.be/n6Ak4GIscVg)

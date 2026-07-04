@@ -37,7 +37,7 @@ def processAdmin(text):
     try:
         # 📎 reads header data from node by providing index of the node throught the function
         if text.__contains__("readHeader("):
-            ind = re.findall("[\\d]+", text)
+            ind = re.findall(r"[\\d]+", text)
             if ind != None:
                 ind = int(ind[0])
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
@@ -48,8 +48,8 @@ def processAdmin(text):
         
         # 📎 returns entire <variable> section from the node by providing the node index
         elif text.__contains__("readVariables"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
-            ind = int(tokens[1])
+            tokens = re.findall(r"[0-9]+", text)
+            ind = int(tokens[0])
             if ind != None:
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = support.factory.readVariables(ind)
@@ -95,10 +95,11 @@ def processAdmin(text):
             message = support.factory.readNodeCount()
 
         # 📎 returns variable value by providing node index and variable name
-        elif text.__contains__("readVariableValue("): 
+        elif text.__contains__("readVar("): 
             ind = int(re.findall("[\\d]+", text)[0])
             if ind != None:
-                name = re.findall("\\$[a-zA-Z0-9]+", text)[0]
+                name = re.findall(r"\$[a-z0-9A-Z]+", text)
+                name = name[0]
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = support.factory.readVar(ind, name)
                 else:
@@ -282,10 +283,18 @@ def processAdmin(text):
             for i in range(conditions):
                 a = i * 5
                 leftVar = tokens[5 + a]
+                if not leftVar.startswith("$"):
+                    raise Exception("Condition variable name not properly formated!")
                 leftType = tokens[6 + a]
+                if leftType!= "integer" and leftType!= "string" and leftType!= "fun" and leftType!= "float":
+                    raise Exception("Condition, variable type not properly formated")
                 rightVar = tokens[7 + a]
                 rightType = tokens[8 + a]
+                if rightType!= "integer" and rightType!= "string" and rightType!= "fun" and rightType!= "float":
+                    raise Exception("Condition, variable type not properly formated")
                 cs = tokens[9 + a]
+                if cs != "==" and cs != ">" and cs != "<":
+                    raise Exception("Condition, sign of comparison not properly formated")
                 last = 9 + a + 1
                 s = statement(leftVar, leftType, rightVar, rightType, cs)
                 cnd.append(s)
@@ -294,10 +303,18 @@ def processAdmin(text):
             for i in range(results):
                 a = i * 5
                 leftVar = tokens[last + a]
+                if not leftVar.startswith("$"):
+                    raise Exception("Result variable name not properly formated!")
                 leftType = tokens[last + 1 + a]
+                if leftType!= "integer" and leftType!= "string" and leftType!= "fun" and leftType!= "float":
+                    raise Exception("Result, variable type not properly formated")
                 rightVar = tokens[last + 2 + a]
                 rightType = tokens[last + 3 + a]
+                if leftType!= "integer" and leftType!= "string" and leftType!= "fun" and leftType!= "float":
+                    raise Exception("Result, variable type not properly formated")
                 cs = tokens[last + 4 + a]
+                if cs != "=" and cs != ">" and cs != "<":
+                    raise Exception("Result, sign of comparison not properly formated")
                 last1 = last + 5 + a
                 s = statement(leftVar, leftType, rightVar, rightType, cs)
                 res.append(s)
@@ -338,36 +355,29 @@ def processAdmin(text):
         # 📎 variable type and variable value
         # 📎 both arguments are forwarded to createVariable function in script.py
         elif text.__contains__("createVariable"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,]+", text)
+            tmp = list()
+            for el in tokens:
+                if el!= "\"":
+                    if not el.__contains__("$"):
+                        tmp.append(el.replace(",", ""))   #the purpose is to allow multiple elements of an array(.kst)
+                    else:                                 #but to remove comma from all other elements of tokens
+                        tmp.append(el)
+            tokens = tmp
             if tokens.__len__() != 6:
                 logit(f"received message {text} in function createVariable, not properly formated", 2)
                 message = "--message not properly formated--"
                 return message
             index = int(tokens[1])
-            varName = str(tokens[2])
-            globalVar = bool(tokens[3])
+            varName = str(tokens[2]).replace(",", "")     #the rason is that in previous loop comma can stay with variable name
+            globalVar = False
+            if tokens[3] == "True" or tokens[3]=="true":
+                globalVar = True
             varType = str(tokens[4])
             varValue = str(tokens[5])
             if index != None:
                 if index > 0 and index < len(support.factory.getNodes()) + 1:
                     message = script.createVariable(index, varName, globalVar, varType, varValue)
-                else:
-                    logit(f"index {ind} received by querry, is out of limits", 2)
-                    message = "--no result--"
-
-        # 📎 this command requests two arguments, node index and switch name
-        # 📎 both arguments are forwarded to turnSwitch function in script.py
-        elif text.__contains__("turnSwitch("):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
-            if tokens.__len__() != 3:
-                logit(f"received message {text} in function turnSwitch, not properly formated", 2)
-                message = "--message not properly formated--"
-                return message
-            ind = int(tokens[1])
-            if ind != None:
-                switchName = tokens[2]
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
-                    message = script.turnSwitch(ind, switchName)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
                     message = "--no result--"
@@ -393,7 +403,7 @@ def processAdmin(text):
         # 📎 this command requests three arguments, node index and trigger name, and a new value to be set
         # 📎 all of arguments are forwarded to changeTriggerValue function in script.py
         elif text.__contains__("changeTriggerValue"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\']+", text)
             if tokens.__len__() != 4:
                 logit(f"received message {text} in function changeTriggerValue, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -412,14 +422,22 @@ def processAdmin(text):
         # 📎 first argument is index of the node, second is variable name and third is variable value
         # 📎 all of 3 arguments are sent to function writeVar in script.py            
         elif text.__contains__("writeVar("): 
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,]+", text)
+            tmp = list()
+            for el in tokens:
+                if el!= "\"":
+                    if not el.__contains__("$"):
+                        tmp.append(el.replace(",", ""))   #the purpose is to allow multiple elements of an array(.kst)
+                    else:                                 #but to remove comma from all other elements of tokens
+                        tmp.append(el)
+            tokens = tmp
             if tokens.__len__() != 4:
                 logit(f"received message {text} in function writeVar, not properly formated", 2)
                 message = "--message not properly formated--"
                 return message
             ind = int(tokens[1])
             if ind != None:
-                vn = tokens[2]
+                vn = tokens[2].replace(",", "")          #removing comma from variable name
                 vv = tokens[3]
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = script.writeVar(ind, vn, vv)

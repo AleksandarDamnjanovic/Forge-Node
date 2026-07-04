@@ -6,8 +6,14 @@ help = '''
 \tVariable that you want to affect with some function, must be already present in the script.
 \tIf variable is not present, you have to create it before you use it in some function.
 
-\twrite-var index name value
+IMPORTANT
+\tWhen providing arrays, no empty space in between elements is allowed
+
+FUNCTIONS
+
+\twrite-variable index name value
 \t\tsets a new value to existing variable. with value arguments, a new value is provided
+\t\t\t\tif variable is of type string, value must be provided within quotation marks
 
 \tchange-trigger-value index name triggerValue
 \t\twith triggerValue argument, a new value for trigger is provided
@@ -20,17 +26,18 @@ help = '''
 \t\tcreates new variable.
 \t\tglobalVar is boolean argument that says whether variable is global or not.
 \t\tvarType sets variable type and varValue, starting value for the new variable
+\t\tif variable is of type string, value must be provided within quotation marks
 
 \tremove-variable index name
 \t\tremoves variable with provided name from the node with provided index
 
-\tadd-val-condition-program index name numOfConditions numOfResults...
+\tadd-value-condition-program index name numOfConditions numOfResults...
 \t...5 arguments for every condition, 5 arguments for every result, funVariableName
 \t\tthis is the most complicated case because num of results and num of conditions is not fix.
 \t\tthere are 5 arguments for every condition and result.
 \t\tleft side, left type, right side, right tyle and sign
 
-\tremove-val-condition-program index name
+\tremove-valuel-condition-program index name
 \t\tremoves val condition program by provided name and from node with provided index
 
 \tadd-time-lim-program index name start end

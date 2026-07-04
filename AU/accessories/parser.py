@@ -14,6 +14,8 @@ def parseCommand(text):
         temp = list()
         for a in text:
             if a != " " and a != "":
+                if str(a).__contains__("\$"):
+                    a= str(a).replace("\$", "$")
                 temp.append(a)
 
         s = temp
@@ -275,21 +277,6 @@ def parseCommand(text):
             index = 0
             name = ""
             message = "removeVariable("
-            for i in range(1, s.__len__()):
-                if s[i] != "":
-                    if counter == 1:
-                        index = int(s[i])
-                    elif counter == 2:
-                        name = s[i]
-                    counter = counter + 1
-            message = f"{message}{index}, {name})"
-
-        # 📖 two necessary arguments; node index, switch name 
-        elif(s[0]=="turn-switch"):
-            counter = 1
-            index = 0
-            name = ""
-            message = "turnSwitch("
             for i in range(1, s.__len__()):
                 if s[i] != "":
                     if counter == 1:
