@@ -18,6 +18,7 @@
     - change-list-value
   - AI can still perform all of actions available by system, but with step by step method. Previously mentioned functions are removed for the sake of simplicity.
 - As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, aswel dealing with array values
+- As of Jul 10. 2026 [Split system](#split-system) is started with development and at the moment is useful only with switches.
 
 ## Video tutorials
 1. [Basic explanations](https://youtu.be/n6Ak4GIscVg)
@@ -339,3 +340,6 @@ Although tcp mode is built for the purpose of AI integration and, possibly, APIs
 
 ## AI skill
 Skill is tested with Hermes and OpenCode. In order to install it, just copy entire skill directory to skill location of you agent. It performs optimal with Gemma 4 4B; therefore with bigger models you can expect better experience. For the sake of simplicity, AI can't use AU functions get-sensor-readings, change-list-value and change-trigger-value; not that all counted functionalities are not supported by AI, but AI needs to use step by step method in order to achieve those.
+
+## Split system
+Split system of KS Smart Systems is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit.
