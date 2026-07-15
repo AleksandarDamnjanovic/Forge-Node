@@ -23,7 +23,10 @@ float sensors[2]={0.0, 0.0};
 
 int nodes[4] =                  {1, 1, 1, 1};
 int nodeSwitches[2] =           {0, 1};
-float nodeSensors[2] =          {0.0, 0.0};
+int nodeSensors[2] =            {1, 1};
+int sensorIndex[2] =            {0, 1};
+int ns =                        2;
+float nodeSensorsValues[2] =          {0.0, 0.0};
 String nodeTransmitters[2] =    {"1", "2"};
 
 #endif
