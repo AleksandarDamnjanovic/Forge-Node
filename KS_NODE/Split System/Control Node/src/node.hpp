@@ -17,16 +17,20 @@
 
 #define SERVER_PORT              10001
 
-int switches[2]={D7, D8};
-String transmitters[2] = {"none", "none"};
-float sensors[2]={0.0, 0.0}; 
+int switches[2]=                        {D7, D8};
 
-int nodes[4] =                  {1, 1, 1, 1};
-int nodeSwitches[2] =           {0, 1};
-int nodeSensors[2] =            {1, 1};
-int sensorIndex[2] =            {0, 1};
-int ns =                        2;
-float nodeSensorsValues[2] =          {0.0, 0.0};
-String nodeTransmitters[2] =    {"1", "2"};
+int nodes[4] =                          {1, 1};
+int numNodeSwitches =                   2;
+int nodeSwitches[2] =                   {0, 1};
+
+int ns =                                2;
+int nodeSensors[2] =                    {1, 1};
+int sensorIndex[2] =                    {0, 1};
+float nodeSensorsValues[2] =            {0.0, 0.0};
+
+int numNodeTransmitters =               2;
+int transmitters[2] =                   {1, 1};
+int transmitterIndex[2] =               {0, 1};
+String transmittersValues[2] =      {"1", "2"};
 
 #endif

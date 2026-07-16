@@ -3,11 +3,6 @@
 # KS Smart System
 
 ## News
-- As of jun 07. 2026, KS Smart Systems support AI integration. Integration tested with Hermes and OpenCode, with various local models like Gemma 3 and Nemotron 3 Nano. At this moment, AI integration is still in early experimental phase; only switching is implemented.
-- As of jun 11. 2026, installation helper scripts are added to the project.
-- As of jun 17. 2026, some bugs are fixed, AI integration is simplified, and video tutorials are published.
-- As of jun 18. 2026, AI skill supports more function. Future update are expected to finish AI program handling.
-- As of jun 19. 2026 architecture diagram added to the project and skill is updated so an agent will now know how to create serial program.
 - As of Jul 03. 2026,
   - AI can handle all of system functionalities
   - help section in AU is sorted
@@ -17,8 +12,9 @@
     - change-trigger-value
     - change-list-value
   - AI can still perform all of actions available by system, but with step by step method. Previously mentioned functions are removed for the sake of simplicity.
-- As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, aswel dealing with array values
+- As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, as well dealing with array values
 - As of Jul 10. 2026 [Split system](#split-system) is started with development and at the moment is useful only with switches.
+- As of Jul 16. 2026 [Split system](#split-system) is fully functional and soon video tutorial can be expected. Plans for wrappers are developed intensively.
 
 ## Video tutorials
 1. [Basic explanations](https://youtu.be/n6Ak4GIscVg)
@@ -342,4 +338,4 @@ Although tcp mode is built for the purpose of AI integration and, possibly, APIs
 Skill is tested with Hermes and OpenCode. In order to install it, just copy entire skill directory to skill location of you agent. It performs optimal with Gemma 4 4B; therefore with bigger models you can expect better experience. For the sake of simplicity, AI can't use AU functions get-sensor-readings, change-list-value and change-trigger-value; not that all counted functionalities are not supported by AI, but AI needs to use step by step method in order to achieve those.
 
 ## Split system
-Split system of KS Smart Systems is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit.
+Split system of KS Smart Systems is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit. Same goes for transmitters. On one side, you set transmitter value, on remote side that value is received and implemented. Sensor values are constantly transmitter from remote unit to the control unit.

@@ -109,16 +109,28 @@ String parseMessage(String message){
 
     processSensors(message, index);
 
-    char full[80];
-    memset(full, '\0', 80);
-    int ln1 = (sizeof(nodeSwitches)/sizeof(nodeSwitches[0]));
-    for(int i = 0; i < ln1; i++){
+    char full[160];
+    memset(full, '\0', 169);
+    for(int i = 0; i < numNodeSwitches; i++){
         char part[40];
         memset(part, '\0', 40);
         if(nodes[i]==index)
             sprintf(part, "I_%d_C_%d_%d ", index, 
                 nodeSwitches[i], 
                 digitalRead(switches[i])==HIGH?1:0);
+        if(full[0]=='\0')
+            strcpy(full, part);
+        else
+            strcat(full, part);
+    }
+
+    for(int i = 0; i < numNodeTransmitters; i++){
+        char part[40];
+        memset(part, '\0', 40);
+        if(transmitters[i]==index)
+            sprintf(part, "I_%d_T_%d_%s ", index, 
+                transmitterIndex[i], 
+                transmittersValues[i].c_str());
         if(full[0]=='\0')
             strcpy(full, part);
         else
