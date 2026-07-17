@@ -1,6 +1,6 @@
 ---
-name: ks-smart-systems-skill
-description: deals with ks smart systems automation
+name: forge-node-skill
+description: deals with forge node automation
 version: 0.0.1
 platforms: [linux, macos, windows]
 metadata:
@@ -9,10 +9,10 @@ metadata:
   requires_toolsets: [terminal, python]
 ---
 
-# KS Smart Systems skill
+# Forge Node skill
 
 ## When is used
-Whenever user asks to do something with its home or company automation that is based on KS Smart Systems. Demand could be something like "Turn on the light in the living room", "Turn off heater in the dining room." , "Make lights more red in the penthouse", "Get me temperature from the terrace"
+Whenever user asks to do something with its home or company automation that is based on Forge Node. Demand could be something like "Turn on the light in the living room", "Turn off heater in the dining room." , "Make lights more red in the penthouse", "Get me temperature from the terrace"
 
 ## Exact script structure
 
@@ -104,20 +104,20 @@ App can take 16 different commands with or without arguments in order to process
     1. index of node where variable is located
     2. name of the variable
 
-4. **add-value-condition-program** creates value condition program; sort of if else statement for .kst script.
+4. **add-value-condition-program** creates value condition program; sort of if else statement for .fn script.
     1. index of node where program is located
     2. name of the program in human readable form
     3. number of conditions
     4. number of results
     5. for every condition, additional 5 arguments must be provided
         1. left side variable
-        2. left side variable type (one of variable types of .kst script)
+        2. left side variable type (one of variable types of .fn script)
         3. right side variable
         4. right side variable type
         5. sign(operation); can be > < ==
     6. for every result, additional 5 arguments must be provided
         1. left side variable
-        2. left side variable type (one of variable types of .kst script)
+        2. left side variable type (one of variable types of .fn script)
         3. right side variable
         4. right side variable type
         5. sign(operation); can be > < =
@@ -317,7 +317,7 @@ In all of cases, always first perform `Query analysis core rules`, and in case o
             - If user said something like `I want to add one switch to list of switches` it is clear that user wants to update list of switches by adding one more switch. Then if user didn't already, agent must ask for exact switch and how change is going to look. When all of changes that user wants to make are clear, agent should use write-variable function to update switching array to desirable content.
             - if user says that it wants to update epoch to a new value. agent should use write-variable function to change epoch variable to desirable value.
             - user can also ask to change last index variable in order to change default starting point. in that case, agent should also use write-variable function to change value of last index variable to desired value. Desired value in this case is index in the switching list of programmable variable of the switch that user wants to be used as default starting point.
-    4. User can ask of agent to make a program to change some value if some condition arise. For that purpose is used valCondition program. This program is something like if else statement in various programming languages. One of most used case in regards of KS Smart Systems is with time limit programs that is going to be explained later in the text when we will have a word about timeLim programs.
+    4. User can ask of agent to make a program to change some value if some condition arise. For that purpose is used valCondition program. This program is something like if else statement in various programming languages. One of most used case in regards of Forge Node is with time limit programs that is going to be explained later in the text when we will have a word about timeLim programs.
         - user can ask to create a program in order to turn on some switch or to change some other value if some other value changes in some way. Example of it can be if user asks that if reading value from sensor goes over some limit that some switch should be turned on and according to that if value of the same sensor goes bellow some limit, that switch that is previously turned on, will be turned off. Example `If temperature in my living room goes below 21 degrees, turn on header number 1 in my living room` in this case, if user don't specify, agent should ask for turning off condition; acceptable option in this case would be 20 degrees.
         - user can also have multiple condition that could produce multiple results. It could ask for something like this `If temperature both in my living room and in my bathroom go below 21 degree, turn on heaters in my entire top floor.` In this case it is easy to realize that user wants to check values from two different sensors that are in most cases located on different nodes, and if, for example, there are 3 different heaters on the top floor, all 3 heaters must be turned on if conditions are fulfilled. So in this case, we would have two conditions and three results. Ways of getting variable for next step are explained in previous example.
         - now agent must determine exact operators that are going to be used in order program to be created.

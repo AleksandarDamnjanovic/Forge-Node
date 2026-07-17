@@ -1,6 +1,6 @@
 ![](banner.jpg)
 
-# KS Smart System
+# Forge Node
 
 ## News
 - As of Jul 03. 2026,
@@ -15,21 +15,23 @@
 - As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, as well dealing with array values
 - As of Jul 10. 2026 [Split system](#split-system) is started with development and at the moment is useful only with switches.
 - As of Jul 16. 2026 [Split system](#split-system) is fully functional and soon video tutorial can be expected. Plans for wrappers are developed intensively.
+- As of Jul. 17. KS Smart Systems is re-branded as Forge Node due to similarities in name with some other smart home systems. Wrapper for c programming language for client node in split system is in development.
 
 ## Video tutorials
+##### In first 3 videos old name for this project was still in use
 1. [Basic explanations](https://youtu.be/n6Ak4GIscVg)
 2. [Installation tutorial for version 0.3.0](https://youtu.be/pGiK0WKn_74)
 3. [AI integration with Hermes Agent and LM Studio local model via Telegram channel](https://youtu.be/Vrgk4hY9c7Y)
 
 ## Intro
-KS Smart System is built with idea for more abstract approach to building of smart home and other smart systems. When building smart home, engineer usually have to worry about both electric, electronics and computer elements of the system. With this solution, after system is set up from hardware perspective, everything else is going to be dealt with from KST script. You can consider KST script as programming language for your smart home for the purpose that, you will not have to worry, any more, about voltage and pins, but about switches, transmitters and sensors, meaning script primitives which define your system.
+Forge Node is built with idea for more abstract approach to building of smart home and other smart systems. When building smart home, engineer usually have to worry about both electric, electronics and computer elements of the system. With this solution, after system is set up from hardware perspective, everything else is going to be dealt with from .fn script. You can consider .fn script as programming language for your smart home for the purpose that, you will not have to worry, any more, about voltage and pins, but about switches, transmitters and sensors, meaning script primitives which define your system.
 
 What all of this means? Means that once you finish with setting up of your nodes, you can do all sorts of tweaks and changes without having to handle soldering iron or multi-meter, or having to flash your micro controllers.
 
 ## What this solution contains
 Inside of this solution, you are going to find two projects. 
 
-- **AAU**, written in python. This is interpreter for .kst script and the core part of the solution. AAU(or 2AU) delegates instructions to nodes, according to the script; receives responses from nodes and applies 
+- **AAU**, written in python. This is interpreter for .fn script and the core part of the solution. AAU(or 2AU) delegates instructions to nodes, according to the script; receives responses from nodes and applies 
 received values. AAU has access to all MQTT topics(communication channels). In addition, AAU has access to admin topic that can be used to send direct commands in real time to AAU and changes working script without restarting of entire system. This last functionality can be use for further development of API.
 
 - **KS_NODE**. This is application for esp32 and eps8266 micro-controllers written with Arduino framework in Visual Studio Code and Platform IO. Before uploading this code to your devices, make sure that you set all proper values in the node.hpp file.
@@ -39,7 +41,7 @@ received values. AAU has access to all MQTT topics(communication channels). In a
 - **ks-smart-systems-skill** AI skill tested with Hermes and OpenCode. 
 
 ## How it works
-Mosquitto MQTT server is used for entire communication exchange. Every node has access only to its own topic named after name of the node itself. Every node has to have its unique index that is used as identification in the script and in instructions. AAU has access to all topics + admin topic and it processes both incoming and outgoing messages according to rules set in .kst script.
+Mosquitto MQTT server is used for entire communication exchange. Every node has access only to its own topic named after name of the node itself. Every node has to have its unique index that is used as identification in the script and in instructions. AAU has access to all topics + admin topic and it processes both incoming and outgoing messages according to rules set in .fn script.
 
 Entire communication is encrypted. By default, self-signed certificate is used.
 
@@ -65,7 +67,7 @@ Use helper scripts if you are using Linux:
 4. **removeOldMosquittoConf.sh**(needs sudo) removes all done bu setupMosquitto.sh.
 Make sure that you have all of settings in AAU/support.py set correctly.
 
-Place script.kst in directory with path that you defined in AAU/support.py and run the app with python3 ./base.py. For any serious usage, consider turning this app into a service; with systemd on Linux or service on Windows.
+Place script .fn in directory with path that you defined in AAU/support.py and run the app with python3 ./base.py. For any serious usage, consider turning this app into a service; with systemd on Linux or service on Windows.
 On the side of nodes, make sure that all of data into node.hpp is set properly and upload the code to your micro controller.
 If you are using mqtt explorer, ideally you should be able to see communication between the node and AAU right away.
 
@@ -114,14 +116,14 @@ In all of cases argument index is index of the node that is affected. name is ac
 18. **readVariables**(index) *reads all of variables from the node-index*
 19. **readHeader**(index) *reads header from the node-index*
 
-## KST Script
+## FN Script
 
 ### Overview
-As is said in previous paragraph, AAU functionalities are based on script that is called kst script, and understanding of how this script works in necessary for agent to be able to operate with the entire system.
+As is said in previous paragraph, AAU functionalities are based on script that is called .fn script, and understanding of how this script works in necessary for agent to be able to operate with the entire system.
 First of all, scrip is divided in nodes. Every node starts with header, than { opening swirly brackets, than variable section that is contained in between opening <variables> and closing </variables> tags, than sensors section that is contained in between opening <sensors> and closing </sensors> tags, than elements section that is contained in between opening <elements> and closing </elements> tag and finally programs section that is contained in between opening <programs> and closing </programs> tag. After closing programs tag, must be closing \} bracket in order to signalize the end of node.
 ### Header
 Header always starts with node index and then ( opening bracket, than in the form of argument wrapped with quotation marks is name of the node in human readable form, comma in between the arguments, than another argument also wrapped in quotation marks is name of the node that is going to be used for machine communication(this name can't contain empty spaces or special signs), comma again and at the end of header must be enclosed with angle brackets, a type of node(possible values are MASTER, SLAVE, SHUNT and BRIDGE)
-EXAMPLE: `1("First floor", "1f", [MASTER])` so if user asks of agent to do something on the first floor by using KS smart systems, agent should know that order is about this node.
+EXAMPLE: `1("First floor", "1f", [MASTER])` so if user asks of agent to do something on the first floor by using Forge Node, agent should know that order is about this node.
 As you can see, the first argument in the header is there to help agent to determine what node should be affected by command.
 ### Variables
 The purpose of variables is to hold values that are going to be used by the system.
@@ -133,7 +135,7 @@ The purpose of variables is to hold values that are going to be used by the syst
            array  $nums     = [1, 2, 3]
 ```
 - **global modifier** Variable can be local or global(if variable declaration has modifier "global", that is global variable. If variable doesn't have "global" modifier, that is local variable). Local variable can be used only in the same node, while global variable can be used from another node too. Example of global variable: `global int $op = 25`, Example of local variable: `int $op = 10`
-- **types** .kst script supports multiple types of variables.
+- **types** .fn script supports multiple types of variables.
     1. int(integer, whole number) example `int $me = 50`
     2. float(number with decimal point) example `float $hey = 23.20`
     3. string(textual values), strings values must be wrapped with quotation marks like `string $bob = "bob the builder"`
@@ -159,7 +161,7 @@ Apart from sensors, elements are those members of the node that can be both read
 - **list("ACmodes", 0, $acModes, $acModeNames, $ACselectedMode, $fl1)** list is basically same as trigger but with one difference. While value from trigger is taken directly on controlled unit, value of list is taken as index. For example, with trigger you send value of 150 that should be used to set red element of your light; with list you have like 3 different modes of work like in the case of AC [off, heating, cooling]; when you send value 0 with list transmitter, micro controller option off is going to be selected because that option corresponds with index 0 from the provided list. First argument is the name of the list in human readable form. Second argument is index of this transmitter on the controlled unit. Third is the list of select-able elements in indexes or integers like [0, 1, 2]; forth is the same list but now in strings like [off, heating, cooling]. Fifth and sixth arguments are selected index in programmable mode and in force mode.
 
 ### Programs
-Programs are where true power of .kst lies. At the moment, there are three types of programs. `valCondition`, `serial` and `timeLim`. `valCondition` and `serial` can be named, while `timeLim` can't. Type of variable that is used to name a program is fun.
+Programs are where true power of .fn lies. At the moment, there are three types of programs. `valCondition`, `serial` and `timeLim`. `valCondition` and `serial` can be named, while `timeLim` can't. Type of variable that is used to name a program is fun.
 
 - **valCondition(textName, conditions, result)**;
 ```
@@ -275,20 +277,20 @@ List of available AU commands:
 5. **remove-variable**(index, name) removes variable.
     1. index of node where variable is located
     2. name of the variable
-6. **add-value-condition-program** creates value condition program; sort of if else statement for .kst script.
+6. **add-value-condition-program** creates value condition program; sort of if else statement for .fn script.
     1. index of node where program is located
     2. name of the program in human readable form
     3. number of conditions
     4. number of results
     5. for every condition, additional 5 arguments must be provided
         1. left side variable
-        2. left side variable type (one of variable types of .kst script)
+        2. left side variable type (one of variable types of .fn script)
         3. right side variable
         4. right side variable type
         5. sign(operation); can be > < ==
     6. for every result, additional 5 arguments must be provided
         1. left side variable
-        2. left side variable type (one of variable types of .kst script)
+        2. left side variable type (one of variable types of .fn script)
         3. right side variable
         4. right side variable type
         5. sign(operation); can be > < =
@@ -338,4 +340,4 @@ Although tcp mode is built for the purpose of AI integration and, possibly, APIs
 Skill is tested with Hermes and OpenCode. In order to install it, just copy entire skill directory to skill location of you agent. It performs optimal with Gemma 4 4B; therefore with bigger models you can expect better experience. For the sake of simplicity, AI can't use AU functions get-sensor-readings, change-list-value and change-trigger-value; not that all counted functionalities are not supported by AI, but AI needs to use step by step method in order to achieve those.
 
 ## Split system
-Split system of KS Smart Systems is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit. Same goes for transmitters. On one side, you set transmitter value, on remote side that value is received and implemented. Sensor values are constantly transmitter from remote unit to the control unit.
+Split system of Forge Node is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit. Same goes for transmitters. On one side, you set transmitter value, on remote side that value is received and implemented. Sensor values are constantly transmitter from remote unit to the control unit.
