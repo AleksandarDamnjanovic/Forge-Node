@@ -9,10 +9,8 @@
 #ifndef CLIENTNODEWRAPPER_H
 #define CLIENTNODEWRAPPER_H
 
-#define client_node_serverIP            "192.168.10.1"
-#define client_node_ssid                "somethingSpecialIndeed"
-#define client_node_password            "thisIsSomeSpecialPasswordThatYouShouldChange"
-int client_node_port =                  10001;
+#define client_node_serverIP            "192.168.0.101"
+#define client_node_port                10001
 int client_node_control_varible =       1;
 bool client_node_started =              false;
 
@@ -35,6 +33,17 @@ void client_node_sendConfirmation();
 void client_node_initializer();
 int client_node_check_control();
 char* client_node_generate_message();
+void client_node_process_message(char* forProcessing);
+void client_node_process_instruction(char* instruction);
+
+typedef struct{
+    int node_index;
+    int elment_index;
+    char type;
+    int int_value;
+    float float_value;
+    char string_value[40];
+}NODE_INSTRUCTION;
 
 void* client_node_communication(void* arg){
     int c = client_node_check_control();
@@ -85,37 +94,114 @@ void client_node_talk(){
         return;
     }
 
-    if(connect(sock, (struct sockaddr*)&server, sizeof(server)<=0)){
+    if(connect(sock, (struct sockaddr*)&server, sizeof(server))<0){
         perror("connect error!");
         close(sock);
         return;
     }
 
-    if (send(sock, message, strlen(message), 0) < 0){
+    int ln = send(sock, message, strlen(message) + 1, 0);
+    if (ln <= 0){
         perror("send");
     }
 
     char buffer[1024];
+    memset(buffer, '\0', 1024);
 
     int n = recv(sock, buffer, sizeof(buffer) - 1, 0);
 
-    if (n > 0){
-        buffer[n] = '\0';
-        printf("Server: %s\n", buffer);
-    }
+    int len= (strlen(buffer)*sizeof(char)) + 1;
+    char* forProcessing= (char*)malloc(len);
+    strcpy(forProcessing, buffer);
+
+    printf("message sent: %smessage received: %s\n", message, forProcessing);
+
+    client_node_process_message(forProcessing);
 
     close(sock);
     free(message);
 }
 
+void client_node_process_instruction(char* instruction){
+    char* part = strtok(instruction, "_");
+    NODE_INSTRUCTION inst;
+    part= strtok(NULL, "_");
+    inst.node_index = atoi(part);
+    
+    if(inst.node_index!=client_node_nodeIndex)
+        return;
+    
+    char c = 'C';
+    char t = 'T';
+    char one = '1';
+
+    part= strtok(NULL, "_");
+    inst.type= *part;
+    part= strtok(NULL, "_");
+    inst.elment_index = atoi(part);
+    part= strtok(NULL, "_");
+    if(inst.type == c){
+        pthread_mutex_lock(&client_node_mutex);
+        client_node_switches[inst.elment_index]= (*part == one)? true : false;
+        pthread_mutex_unlock(&client_node_mutex);
+    
+    }else if(inst.type == t){
+        pthread_mutex_lock(&client_node_mutex);
+        strcpy(client_node_transmitters[inst.elment_index], part);
+        pthread_mutex_unlock(&client_node_mutex);
+    }
+
+}
+
+void client_node_process_message(char* forProcessing){
+    char* part = strtok(forProcessing, " ");
+
+    while(part!=NULL){
+        int len = strlen(part) * sizeof(char);
+        char* instruction = (char*)malloc(len);
+        strcat(instruction, part);
+        client_node_process_instruction(instruction);
+        part= strtok(NULL, " ");
+    }
+
+    free(forProcessing);
+}
+
 char* client_node_generate_message(){
+    pthread_mutex_lock(&client_node_mutex);
+        
+    char buffer[1024];
+    memset(buffer, '\0', 1024);
+    char part[100];
 
+    for(int i = 0; i < client_node_numOfSwitches; i++){
+        memset(part, '\0', 100);
+        sprintf(part, "Cr_%d_C_%d_%d ", client_node_nodeIndex, i, client_node_switches[i]? 1 : 0);
+        if(strlen(buffer)==0)
+            strcpy(buffer, part);
+        else
+            strcat(buffer, part);
+    }
+    
+    for(int i = 0; i < client_node_numOfSensors; i++){
+        memset(part, '\0', 100);
+        sprintf(part, "Cr_%d_R_%d_%.2f ", client_node_nodeIndex, i, client_node_sensors[i]);
+        if(strlen(buffer)==0)
+            strcpy(buffer, part);
+        else
+            strcat(buffer, part);
+    }
 
-//pre no se testira, mora da se odradi implementacija ovog koda
+    char end[] = "\r\n\0";
+    strcat(buffer, end);
+    int len= (strlen(buffer) * sizeof(char))+1;
+    char* toReturn = (char*)malloc(len);
+    memset(toReturn, '\0', len);
+    strcpy(toReturn, buffer);
 
+    pthread_mutex_unlock(&client_node_mutex);
 
-
-
+    return toReturn;
 }
 
 int client_node_check_control(){
@@ -137,14 +223,12 @@ void client_node_stop(){
     client_node_started = false;
 }
 
-void client_node_start(){    
-    if(client_node_started)
+void client_node_start(){
+    if(client_node_started && client_node_control_varible == 0)
         return;
     
     client_node_control_varible = 1;
-    
     pthread_create(&client_node_thread, NULL, client_node_communication, NULL);
-    
     client_node_started = true;
 }
 

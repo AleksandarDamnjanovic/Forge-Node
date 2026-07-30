@@ -1,2 +1,2 @@
 make:
-	gcc main.c clientNodeWrapper.h -pthread -O2 -o main.bin
+	gcc -g main.c clientNodeWrapper.h -pthread -O0 -o main.bin
