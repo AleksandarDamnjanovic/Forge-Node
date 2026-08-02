@@ -3,19 +3,13 @@
 # Forge Node
 
 ## News
-- As of Jul 03. 2026,
-  - AI can handle all of system functionalities
-  - help section in AU is sorted
-  - function turn-switch is removed from the list of AU available functions
-  - AI can't use functions
-    - get-sensor-readings
-    - change-trigger-value
-    - change-list-value
-  - AI can still perform all of actions available by system, but with step by step method. Previously mentioned functions are removed for the sake of simplicity.
 - As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, as well dealing with array values
 - As of Jul 10. 2026 [Split system](#split-system) is started with development and at the moment is useful only with switches.
 - As of Jul 16. 2026 [Split system](#split-system) is fully functional and soon video tutorial can be expected. Plans for wrappers are developed intensively.
 - As of Jul. 17. KS Smart Systems is re-branded as Forge Node due to similarities in name with some other smart home systems. Wrapper for c programming language for client node in split system is in development.
+- As of August 03.
+    - split system continues with development and c wrapper is almost ready. Next step is to create, control node functionality and to rewrite code in order for client to be able to create multiple instances of both control and client nodes in the same app.
+     -  Video presentation of split system is in development.
 
 ## Video tutorials
 ##### In first 3 videos old name for this project was still in use
@@ -341,3 +335,5 @@ Skill is tested with Hermes and OpenCode. In order to install it, just copy enti
 
 ## Split system
 Split system of Forge Node is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit. Same goes for transmitters. On one side, you set transmitter value, on remote side that value is received and implemented. Sensor values are constantly transmitter from remote unit to the control unit.
+## Wrappers
+This feature is first developed for split system, although there is a plan to build it for main system. The basic idea is to create computer code that will allow developers to integrate both control and client node into their apps. At the end, single app should be able to hold multiple instances of both control and client nodes.
