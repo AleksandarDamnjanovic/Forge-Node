@@ -11,6 +11,7 @@
     - split system continues with development and c wrapper is almost ready. Next step is to create, control node functionality and to rewrite code in order for client to be able to create multiple instances of both control and client nodes in the same app.
      -  Video presentation of split system is in development.
      -  First version of split system c wrapper is done and ready for testing. Explanation is provided in root/NODES/Split System/Client Node Wrappers/c and c++
+- As of Septembar 12, c wrapper is done and tested both on control and client side.
 
 ## Video tutorials
 ##### In first 3 videos old name for this project was still in use
