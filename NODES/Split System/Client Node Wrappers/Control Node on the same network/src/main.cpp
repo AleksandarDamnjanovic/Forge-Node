@@ -14,8 +14,13 @@
 #include "parser.hpp"
 #include <IPAddress.h>
 
-WiFiClient client;
 WiFiServer server(SERVER_PORT);
+
+const int nodeCount = 1;
+NODE* nodovi[nodeCount];   
+WiFiClient clients[nodeCount];
+
+void declareNodes();
 
 void setup() {
 
@@ -37,28 +42,71 @@ void setup() {
     Serial.println(WiFi.localIP());
 
     server.begin();
+    declareNodes();
 
-    int len = sizeof(switches)/sizeof(switches[0]);
-    for(int i = 0; i < len; i++)
-        pinMode(switches[i], INPUT);
+    for(int i=0; i < nodeCount; i++)
+        for(int a=0; a < nodovi[i]->numOfSwitches; i++)
+            pinMode(nodovi[i]->switchPins[a], INPUT);
 
 }
 
 void loop() {
+    WiFiClient novo = server.accept();
+    if (novo) {
+        for (int i = 0; i < nodeCount; i++) {
+            if (!clients[i] || !clients[i].connected()) {
+              clients[i] = novo;
+              break;
+            }
+        }
+    }
 
-    client = server.accept();
+    for (int i = 0; i < nodeCount; i++) {
+        if (!clients[i]) continue;
 
-    if(client){
-        if(client.available()){
-            Serial.println("client connected...");
-            String message = client.readStringUntil('\0');
+        if (!clients[i].connected()) {
+            clients[i].stop();
+            continue;
+        }
+
+        if (clients[i].available()) {
+          Serial.println("client connected...");
+            String message = clients[i].readStringUntil('\0');
+            NODE* node = getNodeByIndex(nodovi, nodeCount, getNodeIndex(message));
+            writeTransmitter(node, 0, "hey");
+            writeTransmitter(node, 1, "ho");
             Serial.println(message);
             String response;
-            response = parseMessage(message);
-            client.println(response);
+            response = parseMessage(node, message);
+            Serial.printf("sensor 1: %.2f\tsensor 2: %.2f", readSensor(node, 0), readSensor(node, 1));
+            clients[i].println(response);
             Serial.println(response);
         }
     }
-    client.stop();
+
     delay(100);
+}
+
+void declareNodes(){
+    bool* switches = (bool*)malloc(sizeof(bool) * 2);
+    float* sensors = (float*)malloc(sizeof(float) * 2);
+    char** transmitters = (char**)malloc(sizeof(char) * 2);
+
+    int* pins = (int*)malloc(sizeof(int) * 2);
+    pins[0] = D7;
+    pins[1] = D8;
+
+    for(int i = 0; i < 2; i++)
+        switches[i]= false;
+
+    for(int i = 0; i < 2; i++){
+        transmitters[i] = (char*)malloc(40);
+        memset(transmitters[i],'\0', 40);
+    }
+
+    for(int i = 0; i < 2; i++)
+        sensors[i]= 0.0f;
+
+    NODE* node1= getNode(1, 2,2,2, pins, switches, sensors, transmitters);
+    nodovi[0] = node1;
 }

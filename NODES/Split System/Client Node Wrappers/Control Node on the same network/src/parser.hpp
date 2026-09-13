@@ -18,7 +18,7 @@ typedef struct sensorElements {
     struct sensorElements *next;
 } sensorElements;
 
-void processSensors(String message, int index){
+void processSensors(NODE* node, String message, int index){
     
     const char* mess1 = message.c_str();
     int ln = message.length();
@@ -73,12 +73,7 @@ void processSensors(String message, int index){
         int inn = atoi(tk);
         tk = strtok(NULL, "_");
         float value = atof(tk);
-        for(int i = 0; i < ns; i++){
-            if(nodeSensors[i]==index)
-                if(sensorIndex[i]==inn)
-                    nodeSensorsValues[i]= value;
-        }
-
+        node->sensors[inn] = value;
         test = test->next;
     }
 
@@ -96,7 +91,7 @@ void processSensors(String message, int index){
 
 }
 
-String parseMessage(String message){
+String parseMessage(NODE* node, String message){
 
     const char* mess1 = message.c_str();
     int ln = message.length();
@@ -116,30 +111,28 @@ String parseMessage(String message){
     token = strtok(NULL, "_");
     strcpy(key, token);
 
-    processSensors(message, index);
+    processSensors(node, message, node->index);
 
     char full[160];
-    memset(full, '\0', 169);
-    for(int i = 0; i < numNodeSwitches; i++){
+    memset(full, '\0', 160);
+    for(int i = 0; i < node->numOfSwitches; i++){
         char part[40];
         memset(part, '\0', 40);
-        if(nodes[i]==index)
-            sprintf(part, "I_%d_C_%d_%d ", index, 
-                nodeSwitches[i], 
-                digitalRead(switches[i])==HIGH?1:0);
+        sprintf(part, "I_%d_C_%d_%d ", node->index, 
+            i, 
+            node->switches[i]?1:0);
         if(full[0]=='\0')
             strcpy(full, part);
         else
             strcat(full, part);
     }
 
-    for(int i = 0; i < numNodeTransmitters; i++){
+    for(int i = 0; i < node->numOfTransmitters; i++){
         char part[40];
         memset(part, '\0', 40);
-        if(transmitters[i]==index)
-            sprintf(part, "I_%d_T_%d_%s ", index, 
-                transmitterIndex[i], 
-                transmittersValues[i].c_str());
+        sprintf(part, "I_%d_T_%d_%s ", node->index, 
+            i, 
+            node->transmitters[i]);
         if(full[0]=='\0')
             strcpy(full, part);
         else

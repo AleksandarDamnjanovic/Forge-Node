@@ -8,8 +8,8 @@ int main(int argv, char* argc){
     pthread_t first;
     pthread_t second;
 
-    pthread_create(&first, NULL, controlNodeExample, NULL);
-    sleep(0.5f);
+    //pthread_create(&first, NULL, controlNodeExample, NULL);
+    //sleep(0.5f);
     pthread_create(&second, NULL, clientNodeExample, NULL);
 
     sleep(10);
@@ -34,7 +34,7 @@ void* controlNodeExample(void* arg){
 }
 
 void* clientNodeExample(void* arg){
-    NODE* client= (NODE*)getClientNode(1, 10001, 0, "127.0.0.1", 2, 2, 2);
+    NODE* client= (NODE*)getClientNode(1, 10001, 0, "192.168.0.101", 2, 2, 2);
 
     client_node_start(client);
     writeSensor(0, 12.4, client);

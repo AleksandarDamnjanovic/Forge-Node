@@ -111,10 +111,12 @@ void client_node_process_instruction(char* instruction, NODE *node){
         pthread_mutex_unlock(&node->client_node_mutex);
     
     }else if(inst.type == t){
-        pthread_mutex_lock(&node->client_node_mutex);
-        memset(node->client_node_transmitters[inst.elment_index], '\0', 40);
-        strcpy(node->client_node_transmitters[inst.elment_index], part);
-        pthread_mutex_unlock(&node->client_node_mutex);
+        if(part!=NULL){
+            pthread_mutex_lock(&node->client_node_mutex);
+            memset(node->client_node_transmitters[inst.elment_index], '\0', 40);
+            strcpy(node->client_node_transmitters[inst.elment_index], part);
+            pthread_mutex_unlock(&node->client_node_mutex);
+        }
     }
 
 }
