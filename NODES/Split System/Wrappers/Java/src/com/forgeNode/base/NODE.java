@@ -1,4 +1,15 @@
+/*
+*************** Name: Forge Node
+*************** Part of: Java Wrapper libraries for nodes of split system
+*************** Author: Aleksandar Damnjanovic AKA Kind Spirit
+*************** YouTube channel: Kind Spirit Technology
+*************** Date: 20.8.2026.
+*************** Location: Kragujevac, Serbia
+*/
+
 package com.forgeNode.base;
+
+import java.util.ArrayList;
 
 public class NODE {
     private int nodeIndex;
@@ -63,13 +74,56 @@ public class NODE {
     }
 
     public String getMessage(){
+        String message= new String();
+        for(int i = 0; i < getNumOfSwitches(); i++)
+            message = message + "Cr_" + getNodeIndex() + "_C_" + i + "_" + (getSwitchValue(i)?"1":"0") + " ";
+        
+        for(int i = 0; i < getNumOfSensors(); i++)
+            message = message + "Cr_" + getNodeIndex() + "_R_" + i + "_" + String.format("%.2f", getSensorValue(i)) + " ";
+        
+        message = message + "\n";
 
-
-
-
-        return "";
+        return message;
     }
 
+    public String generateInstructions(){
+        String message= new String();
+        for(int i = 0; i < getNumOfSwitches(); i++)
+            message = message + "I_" + getNodeIndex() + "_C_" + i + "_" + (getSwitchValue(i)?"1":"0") + " ";
+        
+        for(int i = 0; i < getNumOfTransmitters(); i++)
+            message = message + "I_" + getNodeIndex() + "_T_" + i + "_" + getTransmitterValue(i)+ " ";
+        
+        message = message + "\n";
+
+        return message;
+    }
+
+    public void processReport(String rawMessage){
+        ArrayList<NODE_INSTRUCTION> lista= NODE_INSTRUCTION.getListOfInstructions(rawMessage);
+        for(int i = 0; i < lista.size(); i++){
+            if(lista.get(i).getNodeIndex() != this.getNodeIndex())
+                continue;
+            else{
+                if(lista.get(i).getType()=='R')
+                    this.writeSensor(lista.get(i).getElementIndex(), lista.get(i).getFloatValue());
+            }
+        }
+    }
+
+    public void processInstructions(String rawMessage){
+        ArrayList<NODE_INSTRUCTION> lista= NODE_INSTRUCTION.getListOfInstructions(rawMessage);
+        for(int i = 0; i < lista.size(); i++){
+            if(lista.get(i).getNodeIndex() != this.getNodeIndex())
+                continue;
+            else{
+                if(lista.get(i).getType()=='C')
+                    this.writeSwitch(lista.get(i).getElementIndex(), (lista.get(i).getIntValue()==1? true : false));
+                else if(lista.get(i).getType()=='T')
+                    this.writeTransmitter(lista.get(i).getElementIndex(), lista.get(i).getStringValue());
+            }
+        }
+    }
 
     public int getNodeIndex() {
         return nodeIndex;

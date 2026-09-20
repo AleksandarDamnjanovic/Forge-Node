@@ -1,7 +1,15 @@
+/*
+*************** Name: Forge Node
+*************** Part of: Java Wrapper libraries for nodes of split system
+*************** Author: Aleksandar Damnjanovic AKA Kind Spirit
+*************** YouTube channel: Kind Spirit Technology
+*************** Date: 20.8.2026.
+*************** Location: Kragujevac, Serbia
+*/
+
 package com.forgeNode.client;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -30,18 +38,28 @@ public class Client {
             @Override 
             public void run(){
                 while(control){
-                    try (Socket socket = new Socket(node.getServerIP(), node.getPort());
+                    try {
+                        Socket socket = new Socket(node.getServerIP(), node.getPort());
                         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                        BufferedReader in = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream()))) {
+                        InputStream in = socket.getInputStream();
+                        byte data[]=new byte[1024];
 
                         out.println(node.getMessage());
-
-
+                        System.out.println(node.getMessage());
+                        in.read(data);
+                        String received = new String(data, "UTF-8");
+                        System.out.println(received);
+                        node.processInstructions(received);
 
                         out.close();
                         in.close();
+                        socket.close();
                     } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }

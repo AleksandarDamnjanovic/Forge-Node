@@ -1,3 +1,12 @@
+/*
+*************** Name: Forge Node
+*************** Part of: Java Wrapper libraries for nodes of split system
+*************** Author: Aleksandar Damnjanovic AKA Kind Spirit
+*************** YouTube channel: Kind Spirit Technology
+*************** Date: 20.8.2026.
+*************** Location: Kragujevac, Serbia
+*/
+
 package com.forgeNode.base;
 
 import java.util.ArrayList;
@@ -30,7 +39,7 @@ public class NODE_INSTRUCTION {
                 case 'C':
                     intValue = Integer.parseInt(tokens[4]);
                 break;
-                case 'S':
+                case 'R':
                     floatValue = Float.parseFloat(tokens[4]);
                 break;
                 case 'T':
