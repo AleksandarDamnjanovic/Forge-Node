@@ -1,0 +1,4 @@
+## How to use wrapper
+
+Wrappers are present in two main versions and in 3 programming languages. There are wrappers for main system. Those wrappers should work as clients, communicating over **MQTT** server with **AAU**, the same way micro-controller does. On the other hand, wrapper for split system can work both as client or controller units; moreover, single app can work as multiple clients and controls simultaneously.
+Examples of how wrappers should be implemented are in every sub-project executable file. Actually, the important part of every sub-project are all other files, besides the executable one. You can copy/paste those files in your project directly, compile it or whatever you see fit for your project.

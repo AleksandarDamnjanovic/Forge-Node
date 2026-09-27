@@ -3,17 +3,10 @@
 # Forge Node
 
 ## News
-- As of Jul 04. 2026 bugs regarding AAU-AU communication are fixed, as well dealing with array values
-- As of Jul 10. 2026 [Split system](#split-system) is started with development and at the moment is useful only with switches.
-- As of Jul 16. 2026 [Split system](#split-system) is fully functional and soon video tutorial can be expected. Plans for wrappers are developed intensively.
-- As of Jul. 17. KS Smart Systems is re-branded as Forge Node due to similarities in name with some other smart home systems. Wrapper for c programming language for client node in split system is in development.
-- As of August 03.
-    - split system continues with development and c wrapper is almost ready. Next step is to create, control node functionality and to rewrite code in order for client to be able to create multiple instances of both control and client nodes in the same app.
-     -  Video presentation of split system is in development.
-     -  First version of split system c wrapper is done and ready for testing. Explanation is provided in root/NODES/Split System/Client Node Wrappers/c and c++
 - As of September 12, c wrapper is done and tested both on control and client side.
 - As of September 15, java wrapper is started with development, mainly for the purpose of Android devices integration.
-- As of September 20, java wrapper is done.
+- As of September 20, java wrapper is done for split system.
+- As of September 27. java wrapper is done for main system. Example is given in main class of this sub-project.
 
 ## Video tutorials
 ##### In first 3 videos old name for this project was still in use
@@ -340,4 +333,4 @@ Skill is tested with Hermes and OpenCode. In order to install it, just copy enti
 ## Split system
 Split system of Forge Node is separated project built for direct interaction between two units. In this case, one unit takes role of commanding unit, and one or more units are getting role of serving units. Connection between commanding and serving side is remote over WiFi by using commanding unit as WiFi access point. The point is that on command unit user can activate a switch, and corresponding switch is going to be activated on remote unit. Same goes for transmitters. On one side, you set transmitter value, on remote side that value is received and implemented. Sensor values are constantly transmitter from remote unit to the control unit.
 ## Wrappers
-This feature is first developed for split system, although there is a plan to build it for main system. The basic idea is to create computer code that will allow developers to integrate both control and client node into their apps. At the end, single app should be able to hold multiple instances of both control and client nodes.
+The basic idea is to create computer code that will allow developers to integrate both control and client node into their apps. At the end, single app should be able to hold multiple instances of both control and client nodes. In case of main system, wrapper nodes are going to be able to act only as client nodes.
