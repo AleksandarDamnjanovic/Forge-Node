@@ -1,6 +1,6 @@
 '''
-*************** Name: KS Node
-*************** Part of: KS Smart Systems
+*************** Name: AAU
+*************** Part of: Forge Node
 *************** Author: Aleksandar Damnjanovic AKA Kind Spirit
 *************** YouTube channel: Kind Spirit Technology
 *************** Date: 26.11.2024.
@@ -84,7 +84,7 @@ def on_message(client, data, message):
                     valid, demand = support.factory.processConfirmation(l)
                     if valid == False:
                         __result= False
-                        break
+                #        break
                 if __result == False and demand != -1:
                     logit(f"update called by sensor on node: {demand}", 0)
                     rerun()
@@ -97,14 +97,15 @@ def on_message(client, data, message):
 def sendMessages():
     for n in support.nodes:
         ind = n.getNodeIndex()
-        message = support.factory.getMessagesByIndex(ind)
-        if len(message)>0:
-            message = message[0]
-        client= clients.__getitem__(ind)
-        try:
-            client.publish(n.getTopic(), message)
-        except Exception as e:
-            logit(f"--sendMessage function-- error message:{e}", 2)
+        if n.getType() == "MASTER" or n.getType() == "SHUNT":
+            message = support.factory.getMessagesByIndex(ind)
+            if len(message)>0:
+                message = message[0]
+            client= clients.__getitem__(ind)
+            try:
+                client.publish(n.getTopic(), message)
+            except Exception as e:
+                logit(f"--sendMessage function-- error message:{e}", 2)
 
 # 📎 the main purpose of this theread is to run indefinitelly and to call function rerun periodically.
 # 📎 function rerun is what actually does all the work

@@ -1,3 +1,14 @@
+'''
+*************** Name: AAU
+*************** Part of: Forge Node
+*************** Author: Aleksandar Damnjanovic AKA Kind Spirit
+*************** YouTube channel: Kind Spirit Technology
+*************** Date: 26.11.2024.
+*************** Location: Kragujevac, Serbia
+*************** Description:
+                    This is the main part of the project. This file should be executed in order for program to work.
+'''
+
 import re
 import datetime
 import time
@@ -27,15 +38,6 @@ def refresh():
 
     for node in support.nodes:
         node.processNode()
-
-
-
-
-
-
-
-
-
 
 def writeNode(index, text):
     ind = str(text).index(",")
@@ -77,11 +79,6 @@ def writeNode(index, text):
     support.START = False
 
     return "UPDATED"
-
-
-
-
-
 
 # 📎 this function removes serial program by provided name from node with provided index
 def removeSerialProgram(index, name):
@@ -214,7 +211,7 @@ def changeListValue(index, listName, listValue):
     val = n.getVariableValueByName(var)
 
     if(LIST==None):
-        text= f"list with name of {triggerName} on node with index {index} not existing"
+        text= f"list with name of {listName} on node with index {index} not existing"
         logit(text, 2)
         return text
 

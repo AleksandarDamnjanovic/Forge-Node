@@ -5,18 +5,17 @@ from accessories.ks_logger import logit
 
 lock = threading.Lock()
 
-scriptFile = ""
-baskupScriptFile = ""
-logFile = ""
-certificate = ""
-serverKey = ""
-serverCertificate = ""
+scriptFile = "/home/irishpub/Programming/AAU/script/script.fn"
+baskupScriptFile = "/home/irishpub/Programming/AAU/script/backup-script.fn"
+logFile = "/home/irishpub/Programming/AAU/script/log.txt"
+certificate = "/home/irishpub/Programming/AAU/certs/ca.crt"
+serverKey = "/home/irishpub/Programming/AAU/certs/broker.key"
+serverCertificate = "/home/irishpub/Programming/AAU/certs/broker.crt"
 
-address =       ""
+address =       "192.168.0.24"
 port =          8883
-auPort =        10001
-user =          "" 
-password =      ""
+user =          "admin" 
+password =      "00004444"
 START =         False
 
 factory = None

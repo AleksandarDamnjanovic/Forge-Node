@@ -6,7 +6,7 @@ from accessories.ks_logger import logit
 
 class node:
     def __init__(self, nodeIndex, nodeName, unitTopic, variables, sensors, elementLists, elementTriggers,  
-                elementSwitches, valConditions, serials, funNames, timeLimits, unitType, slave):
+                elementSwitches, valConditions, serials, funNames, timeLimits, unitType, slaveOf, masterOf: list):
         self.__nodeIdex = nodeIndex
         self.__nodeName = nodeName
         self.__unitTopic = unitTopic
@@ -20,7 +20,8 @@ class node:
         self.__funNames= funNames
         self.__timeLims = timeLimits
         self.__unitType = unitType
-        self.__slave = slave
+        self.__slaveOf = slaveOf
+        self.__masterOf = masterOf
         self.__presence = False
         self.__presenceTimeStamp = 0
         self.resetEpoh()
@@ -52,11 +53,17 @@ class node:
     # ************************************************************************************************
     
     # 📎 getters and setters for the main object variables *******************************************
+    def getMasterOf(self):
+        return self.__masterOf
+
+    def setMasterOf(self, masterOf: list):
+        self.__masterOf = masterOf
+    
     def getType(self):
         return self.__unitType
     
-    def getSlave(self):
-        return self.__slave
+    def getSlaveOf(self):
+        return self.__slaveOf
 
     def getNodeEpoh(self):
         return self.__nodeEpoh

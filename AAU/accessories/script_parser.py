@@ -1,6 +1,6 @@
 '''
-*************** Name: KS Node
-*************** Part of: KS Smart Systems
+*************** Name: AAU
+*************** Part of: Forge Node
 *************** Author: Aleksandar Damnjanovic AKA Kind Spirit
 *************** YouTube channel: Kind Spirit Technology
 *************** Date: 25.05.2026.
@@ -39,7 +39,7 @@ def parseNodes(factory, __nodes, __globalVars):
     for unit in x:
 
         try:
-            if not (unit.__contains__("MASTER")) or (unit.__contains__("SLAVE")):
+            if not (unit.__contains__("MASTER")) and not (unit.__contains__("SLAVE")) and not (unit.__contains__("SHUNT")) and not (unit.__contains__("BRIDGE")):
                 continue 
             start = unit.index(")")
             nameIndexType = unit[0:start]
@@ -48,12 +48,32 @@ def parseNodes(factory, __nodes, __globalVars):
             unitName = unitNameTopic[0].replace("\"", "")
             unitTopic = unitNameTopic[1].replace("\"", "")
             nameIndexType = nameIndexType[nameIndexType.index(unitName)+ len(unitName):len(nameIndexType)]
-            unitType = re.search("(MASTER)|(SLAVE)", nameIndexType)[0]
-            slave = None
-            if unitType == "SLAVE":
-                slave = int(re.search("[\\d]+", nameIndexType)[0])
+            unitType = re.search("(MASTER)|(SLAVE)|(SHUNT)|(BRIDGE)", nameIndexType)[0]
+            slaveOf = None
+            masterOf = None
+
+            if unitType == "SHUNT" or unitType == "BRIDGE" or unitType == "SLAVE":
+                b = str(unit).index("<meta>")
+                e = str(unit).index("</meta>")
+                meta = unit[b+6:e]
+                mm = meta.split("\n")
+                for m in mm:
+                    m = m.replace("  ", "")
+                    if m != "":
+                        if m.startswith("master"):
+                            text = re.findall("[0-9]+", m)
+                            slaveOf = int(text[0])
+                        elif m.startswith("slaves"):
+                            text = re.findall("[0-9]+", m)
+                            for t in text:
+                                if masterOf == None:
+                                    masterOf = list()
+                                    masterOf.append(int(t))
+                                else:
+                                    masterOf.append(int(t))
+
         except e as Exception:
-            logit("Script parsing error!!! Headers not formed properly!!!", 1)
+            logit("Script parsing error!!! Headers or meta, not formed properly!!!", 1)
             logit("AAU terminated!!!", 1)
             quit()
 
@@ -156,7 +176,7 @@ def parseNodes(factory, __nodes, __globalVars):
             quit()
 
         __nodes.append(node(unitIndex, unitName, unitTopic, vars, sens, elLists, elTrigger,
-                                 elSwitch, valConditions, serials, funNames, timeLims, unitType, slave))
+                                 elSwitch, valConditions, serials, funNames, timeLims, unitType, slaveOf, masterOf))
 
 def parseVariables(line):
     varType= None

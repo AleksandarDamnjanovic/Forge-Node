@@ -110,7 +110,7 @@ def processAdmin(text):
         # 📎 both arguments are forwarded to getSensorReadings function in script.py
         # 📎 the point is to get value from the particular sensor directly             
         elif text.__contains__("getSensorReadings"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\-\_\+]+", text)
             if tokens.__len__() != 3:
                 logit(f"received message {text} in function getSensorReadings, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -233,7 +233,7 @@ def processAdmin(text):
         # 📎 this function removes val condition program from the node with provided index by function name
         # 📎 first argument is node index and second argument is val condition program name that should be removed
         elif text.__contains__("removeValConditionProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\-\_\+]+", text)
             
             try:
                 index = int(tokens[1])
@@ -259,7 +259,7 @@ def processAdmin(text):
         # 📎 the last argument is function name. if you don't want function name, you will have to pass None
         # 📎 at the end, with all arguments reformed, function addValConditionProgran from script.py will be called
         elif text.__contains__("addValConditionProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.=><]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.=><\-\_\+]+", text)
             
             try:
                 index = int(tokens[1])
@@ -337,7 +337,7 @@ def processAdmin(text):
         # 📎 provided arguments are node index and variable name
         # 📎 both arguments are forwarded to removeVariable function in script.py
         elif text.__contains__("removeVariable"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\-\_\+]+", text)
             if tokens.__len__() != 3:
                 logit(f"received message {text} in function removeVariable, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -355,7 +355,7 @@ def processAdmin(text):
         # 📎 variable type and variable value
         # 📎 both arguments are forwarded to createVariable function in script.py
         elif text.__contains__("createVariable"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,\-\_\+]+", text)
             tmp = list()
             for el in tokens:
                 if el!= "\"":
@@ -403,7 +403,7 @@ def processAdmin(text):
         # 📎 this command requests three arguments, node index and trigger name, and a new value to be set
         # 📎 all of arguments are forwarded to changeTriggerValue function in script.py
         elif text.__contains__("changeTriggerValue"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\']+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\-\_\+]+", text)
             if tokens.__len__() != 4:
                 logit(f"received message {text} in function changeTriggerValue, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -422,7 +422,7 @@ def processAdmin(text):
         # 📎 first argument is index of the node, second is variable name and third is variable value
         # 📎 all of 3 arguments are sent to function writeVar in script.py            
         elif text.__contains__("writeVar("): 
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,]+", text)
+            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,\-\_\+]+", text)
             tmp = list()
             for el in tokens:
                 if el!= "\"":

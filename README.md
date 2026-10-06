@@ -7,6 +7,7 @@
 - As of September 15, java wrapper is started with development, mainly for the purpose of Android devices integration.
 - As of September 20, java wrapper is done for split system.
 - As of September 27. java wrapper is done for main system. Example is given in main class of this sub-project.
+- As of October 6. implementation of SHUNT, BRIDGE and SLAVE nodes is done. Next step is to update Nodes, both for micro-controllers and wrappers to support this functionality.
 
 ## Video tutorials
 ##### In first 3 videos old name for this project was still in use
@@ -40,11 +41,11 @@ There are multiple types of nodes, although at the moment only one type is imple
 
 - **MASTER**; this type of node, has direct access to its own topic and its messages are processed directly by AAU.
 
-- **SHUNT**(not yet implemented); same as master type, but with additional functionality. In case when smart system has some remote group of nodes shunt serves as communication node towards remote group from the server side. All of messages for the shunt, bridge and other slave nodes in the remote group are grouped in single message on the AAU and sent to the shunt. Shunt removes from this message only those instructions with its own index and all the rest are sent to the bridge.
+- **SHUNT**; same as master type, but with additional functionality. In case when smart system has some remote group of nodes shunt serves as communication node towards remote group from the server side. All of messages for the shunt, bridge and other slave nodes in the remote group are grouped in single message on the AAU and sent to the shunt. Shunt removes from this message only those instructions with its own index and all the rest are sent to the bridge.
 
-- **BRIDGE**(not yet implemented); is same as shunt just on the side of remote group. It receives message from the shunt, splits all of instructions by the index and reform messages for slaves connected to it. While shunt acts as a master, bridge acts as a slave. Responses from those slaves are again grouped together and as a single message sent back to the shunt that passes that message from entire remote group to the AAU.
+- **BRIDGE**; is same as shunt just on the side of remote group. It receives message from the shunt, splits all of instructions by the index and reform messages for slaves connected to it. While shunt acts as a master, bridge acts as a slave. Responses from those slaves are again grouped together and as a single message sent back to the shunt that passes that message from entire remote group to the AAU.
 
-- **SLAVE**(not yet implemented); slave is just an node in the remote group that has no direct access to the AAU but communicates with it through BRIDGE and SHUNT channel.
+- **SLAVE**; slave is just an node in the remote group that has no direct access to the AAU but communicates with it through BRIDGE-SHUNT channel.
 
 ![](Architecture.jpg)
 

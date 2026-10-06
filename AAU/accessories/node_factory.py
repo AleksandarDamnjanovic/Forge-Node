@@ -6,6 +6,7 @@ import sys, os
 import support
 from accessories.script_parser import parseNodes
 import time
+from accessories.ks_logger import logit
 
 class nodeFactory:
     def __init__(self):
@@ -217,7 +218,7 @@ class nodeFactory:
             logit(f"--onReadAll-- error message:{e}", 2)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            login(f"{exc_type} {fname} {exc_tb.tb_lineno}", 2)
+            logit(f"{exc_type} {fname} {exc_tb.tb_lineno}", 2)
 
         return content
     
@@ -276,6 +277,15 @@ class nodeFactory:
         for n in self.__nodes:
             if n.getNodeIndex() == index:
                 return n
+
+
+
+
+
+
+
+    #ova funkcija mi opasno bode oci, ovo mora da se ispita
+
 
     # 📎 checks validity of message returned from the microcontroller
     # 📎 if message is not valid, warning is going to be sent to the user
@@ -361,13 +371,30 @@ class nodeFactory:
                 messages.append(m)
         return messages
 
+    # 📎 return messages from a single SHUNT node
+    def getMessagesForShunt(self, node):
+        messages = list()
+        for m in self.getMessages():
+            mm = str(m).split("_")
+            mm = int(mm[1])
+            if mm in node.getMasterOf() or mm == node.getNodeIndex():
+                messages.append(m)
+        return messages
+
    # 📎 create entire pack of messages that are going to be sent to all of clients
     def packMessages(self):
         temp = list()
         for n in self.getNodes():
+
+            if n.getType() == "BRIDGE" or n.getType() == "SLAVE":
+                continue
+            
             ind = n.getNodeIndex()
             message = ""
-            messages = self.getMessagesByIndex(ind)
+            if n.getType() == "MASTER":
+                messages = self.getMessagesByIndex(ind)
+            else:
+                messages = self.getMessagesForShunt(n)
             delim = ""
             for m in messages:
                 message = f"{message}{delim}{m}"
