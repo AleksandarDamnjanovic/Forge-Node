@@ -23,7 +23,7 @@ public class NODE_INSTRUCTION {
         ArrayList<NODE_INSTRUCTION>lista = new ArrayList<NODE_INSTRUCTION>();
         String tokens[] = rawMessage.split(" ");
         for(String t: tokens)
-            if(t.startsWith("I"))
+            if(t.startsWith("I") || t.startsWith("Cr"))
                 lista.add(new NODE_INSTRUCTION(t));
 
         return lista;

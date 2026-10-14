@@ -43,6 +43,7 @@ public class NODE {
         this.clientNodeSwitches = switches;
         this.clientNodeSensors = sensors;
         this.clientNodeTransmitters= transmitters;
+
     }
 
     public NODE(int nodeIndex, int numOfSwitches, int numOfSensors, int numOfTransmitters,
@@ -75,7 +76,6 @@ public class NODE {
     public void processInstructions(String rawMessage){
         if(rawMessage.startsWith("Cr"))
             return;
-
         ArrayList<NODE_INSTRUCTION> lista= NODE_INSTRUCTION.getListOfInstructions(rawMessage);
         for(int i = 0; i < lista.size(); i++){
             if(lista.get(i).getNodeIndex() != this.getNodeIndex())

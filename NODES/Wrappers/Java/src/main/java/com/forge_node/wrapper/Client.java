@@ -1,3 +1,12 @@
+/*
+*************** Name: Forge Node
+*************** Part of: Java Wrapper libraries
+*************** Author: Aleksandar Damnjanovic AKA Kind Spirit
+*************** YouTube channel: Kind Spirit Technology
+*************** Date: 20.8.2026.
+*************** Location: Kragujevac, Serbia
+*/
+
 package com.forge_node.wrapper;
 
 import java.io.FileInputStream;
@@ -29,11 +38,12 @@ public class Client {
     int port;
     String address;
     MqttClient client;
-    public final Object lock = new Object();
+    private final Object lock = new Object();
 
     private boolean control = true;
 
-    public Client(NODE node, String name, String password, String ip, int port, String keystorePath, String keystorePassword){
+    public Client(NODE node, String name, String password, String ip, int port, String keystorePath,
+            String keystorePassword){
         this.node = node;
         this.name = name;
         this.password = password;

@@ -8,6 +8,7 @@
 - As of September 20, java wrapper is done for split system.
 - As of September 27. java wrapper is done for main system. Example is given in main class of this sub-project.
 - As of October 6. implementation of SHUNT, BRIDGE and SLAVE nodes is done. Next step is to update Nodes, both for micro-controllers and wrappers to support this functionality.
+- As of October 14. SHUNT, BRIDGE and SLAVE functionality is available for Java wrapper.
 
 ## Video tutorials
 ##### In first 3 videos old name for this project was still in use
