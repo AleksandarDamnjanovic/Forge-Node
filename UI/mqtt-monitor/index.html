@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Node — MQTT Real-Time Monitor</title>
+  <link rel="icon" type="image/png" href="Forge Node Studio Icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="Forge Node Studio Icon.png" alt="Forge Node Studio" class="brand-logo-img" />
+      <div>
+        <h1 class="brand-title">Forge Node MQTT Monitor</h1>
+        <span class="brand-subtitle">Real-Time Node Telemetry &amp; Topic Inspector</span>
+      </div>
+    </div>
+
+    <!-- Broker Status Pill -->
+    <div class="file-status" id="brokerStatusPill" title="Click to configure MQTT broker connection">
+      <span class="status-dot disconnected" id="connStatusDot"></span>
+      <span id="connBrokerLabel">Disconnected (192.168.0.24:8883)</span>
+      <span class="validation-pill warn" id="connStateBadge">Not Connected</span>
+    </div>
+
+    <div class="topbar-actions">
+      <label class="stream-toggle-pill" title="Toggle Live MQTT Stream panel (25% width)">
+        <input type="checkbox" id="chkToggleStream" />
+        <span>📡 Live MQTT Stream</span>
+        <span class="diag-count" id="topbarMsgCountBadge">0</span>
+      </label>
+      <a href="../script-editor/index.html" class="btn btn-secondary" style="text-decoration:none;" title="Switch to .fn Script Visual Editor">
+        <span>📝</span> Script Editor
+      </a>
+      <input type="file" id="fnFileInput" accept=".fn,.kst,.txt" hidden />
+      <button class="btn btn-secondary" id="btnReloadWorkingFn" title="Reload AAU/script/working.fn">
+        <span>↺</span> working.fn
+      </button>
+      <button class="btn btn-secondary" id="btnOpenFnFile" title="Load another .fn script to extract node topics">
+        <span>📂</span> Load .fn
+      </button>
+      <button class="btn btn-primary" id="btnOpenConnModal" title="Open MQTT Broker Connection Dialog (mqtt.conf)">
+        <span>🔌</span> Broker Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Studio Layout (Full-Screen Center Dashboard + Optional 25% Right Stream Panel) -->
+  <main class="studio-layout" id="studioLayout">
+    <!-- Center Workspace: Node Dashboard Grid & Live Node Telemetry -->
+    <section class="editor-workspace" id="monitorWorkspace">
+      <!-- Populated dynamically by app.js -->
+    </section>
+
+    <!-- Right Panel: Optional Live MQTT Message Stream & Topic Message Counts (25% width when enabled) -->
+    <aside class="code-panel hidden" id="streamPanel">
+      <div class="code-panel-header">
+        <div class="code-tabs">
+          <button class="code-tab active" data-stream-tab="messages">
+            Live MQTT Stream <span class="diag-count" id="msgCountBadge">0</span>
+          </button>
+          <button class="code-tab" data-stream-tab="rawscript">
+            Topics &amp; Msg Counts (<span id="topicCountBadge">0</span>)
+          </button>
+        </div>
+        <div class="code-actions">
+          <button class="btn btn-xs btn-secondary" id="btnPauseStream" title="Pause/Resume live message auto-scroll">
+            ⏸ Pause
+          </button>
+          <button class="btn btn-xs btn-secondary" id="btnClearStream" title="Clear message log">
+            🗑 Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 1: Live MQTT Messages -->
+      <div class="code-tab-content active" id="tabMessagesContent">
+        <div class="stream-filter-bar">
+          <select id="streamTopicFilter" class="select select-sm input-mono">
+            <option value="ALL">All Subscribed Topics (*)</option>
+          </select>
+        </div>
+
+        <div class="mqtt-stream-list" id="mqttStreamList"></div>
+
+        <!-- Quick Publish Bar -->
+        <div class="publish-box">
+          <div class="publish-box-header">
+            <span>Publish Message to MQTT Topic</span>
+            <span class="text-dim" id="publishTargetHint">Select topic &amp; payload</span>
+          </div>
+          <div class="publish-row">
+            <select id="pubTopicSelect" class="select select-sm input-mono" style="width: 135px; flex-shrink: 0;"></select>
+            <input type="text" id="pubPayloadInput" class="input input-sm input-mono" placeholder="e.g. writeVar(1, $f2, 1) or readVariables(1)" />
+            <button class="btn btn-sm btn-primary" id="btnPublishMsg">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Node Topics & Message Counts -->
+      <div class="code-tab-content" id="tabRawScriptContent">
+        <div class="diagnostics-list" id="headerMapList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- MQTT Broker Connection Dialog Modal -->
+  <div class="modal-backdrop hidden" id="connModal">
+    <div class="modal modal-conn">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="conn-modal-icon">🔒</span>
+          <div>
+            <h3>MQTT Server Connection Setup</h3>
+            <span class="modal-subtitle">Saved in <code>UI/mqtt-monitor/mqtt.conf</code> — auto-connects on next launch</span>
+          </div>
+        </div>
+        <button class="btn-icon" id="btnCloseConnModal" title="Close dialog">✕</button>
+      </div>
+
+      <form id="connForm" class="modal-body" onsubmit="return false;">
+        <!-- IP and Port Row -->
+        <div class="form-row two-col-ip-port">
+          <div>
+            <label class="field-label">
+              <span>MQTT Broker IP / Host</span>
+              <span class="label-hint">support.py default</span>
+            </label>
+            <input
+              type="text"
+              id="mqttIp"
+              class="input input-mono"
+              placeholder="192.168.0.24"
+              value="192.168.0.24"
+              required
+            />
+          </div>
+          <div>
+            <label class="field-label">
+              <span>Port Number</span>
+              <span class="label-hint">TLS: 8883</span>
+            </label>
+            <input
+              type="number"
+              id="mqttPort"
+              class="input input-mono"
+              placeholder="8883"
+              value="8883"
+              min="1"
+              max="65535"
+              required
+            />
+          </div>
+        </div>
+
+        <!-- Username and Password Row -->
+        <div class="form-row two-col">
+          <div>
+            <label class="field-label">
+              <span>Username</span>
+              <span class="label-hint">Mosquitto user</span>
+            </label>
+            <input
+              type="text"
+              id="mqttUsername"
+              class="input input-mono"
+              placeholder="admin"
+              value="admin"
+              autocomplete="username"
+            />
+          </div>
+          <div>
+            <label class="field-label">
+              <span>Password</span>
+              <button type="button" class="btn-link-xs" id="btnTogglePwd">Show</button>
+            </label>
+            <input
+              type="password"
+              id="mqttPassword"
+              class="input input-mono"
+              placeholder="••••••••"
+              value="00004444"
+              autocomplete="current-password"
+            />
+          </div>
+        </div>
+
+        <!-- Certificate 1: CA Certificate (ca.crt) -->
+        <div class="form-row">
+          <label class="field-label">
+            <span>1. Certificate Authority (<code>ca.crt</code>)</span>
+            <span class="label-hint">CA certificate file or path</span>
+          </label>
+          <div class="cert-picker-row">
+            <input
+              type="text"
+              id="mqttCaCertPath"
+              class="input input-mono"
+              placeholder="/home/irishpub/Programming/Forge Node/AAU/certs/ca.crt"
+              value="/home/irishpub/Programming/Forge Node/AAU/certs/ca.crt"
+            />
+            <input type="file" id="mqttCaCertFileInput" accept=".crt,.pem,.cer,.ca,.txt" hidden />
+            <button type="button" class="btn btn-secondary" id="btnBrowseCaCert" style="white-space:nowrap;">
+              📄 Browse ca.crt
+            </button>
+          </div>
+          <div class="cert-file-pill hidden" id="caCertFileLoadedBox">
+            <span id="caCertFileLoadedName">ca.crt loaded</span>
+            <button type="button" class="btn-link-xs" id="btnClearCaCertFile">Clear</button>
+          </div>
+        </div>
+
+        <!-- Certificate 2: Broker Certificate (broker.crt) -->
+        <div class="form-row">
+          <label class="field-label">
+            <span>2. Broker Certificate (<code>broker.crt</code>)</span>
+            <span class="label-hint">Server / broker certificate file or path</span>
+          </label>
+          <div class="cert-picker-row">
+            <input
+              type="text"
+              id="mqttBrokerCertPath"
+              class="input input-mono"
+              placeholder="/home/irishpub/Programming/Forge Node/AAU/certs/broker.crt"
+              value="/home/irishpub/Programming/Forge Node/AAU/certs/broker.crt"
+            />
+            <input type="file" id="mqttBrokerCertFileInput" accept=".crt,.pem,.cer,.ca,.txt" hidden />
+            <button type="button" class="btn btn-secondary" id="btnBrowseBrokerCert" style="white-space:nowrap;">
+              📄 Browse broker.crt
+            </button>
+          </div>
+          <div class="cert-file-pill hidden" id="brokerCertFileLoadedBox">
+            <span id="brokerCertFileLoadedName">broker.crt loaded</span>
+            <button type="button" class="btn-link-xs" id="btnClearBrokerCertFile">Clear</button>
+          </div>
+        </div>
+
+        <!-- Config Persistence Status -->
+        <div class="form-row">
+          <label class="field-label">
+            <span>Config File (<code>UI/mqtt-monitor/mqtt.conf</code>)</span>
+            <span class="label-hint" id="bridgeDetectStatus">Checking bridge...</span>
+          </label>
+        </div>
+
+        <!-- Extracted Topics Preview inside Modal -->
+        <div class="modal-topics-preview">
+          <div class="modal-topics-header">
+            <span>Extracted Node Topics from <code>AAU/script/working.fn</code> (<strong id="modalTopicCount">11</strong> nodes)</span>
+            <label class="checkbox-label" style="font-size:11px;">
+              <input type="checkbox" id="chkSubscribeAdmin" checked />
+              Also subscribe to <code>admin</code>
+            </label>
+          </div>
+          <div class="modal-topics-chips" id="modalTopicsChips"></div>
+        </div>
+      </form>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-danger hidden" id="btnDisconnectBroker">
+          Cancel / Disconnect
+        </button>
+        <div style="display:flex;gap:8px;margin-left:auto;">
+          <button type="button" class="btn btn-secondary" id="btnCancelConnModal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" id="btnConnectBroker">
+            🔌 Save to mqtt.conf &amp; Connect
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

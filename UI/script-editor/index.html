@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Node — .fn Script Studio</title>
+  <link rel="icon" type="image/png" href="Forge Node Studio Icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="Forge Node Studio Icon.png" alt="Forge Node Studio" class="brand-logo-img" />
+      <div>
+        <h1 class="brand-title">Forge Node Studio</h1>
+        <span class="brand-subtitle">.fn Script Visual Editor &amp; Generator</span>
+      </div>
+    </div>
+
+    <div class="file-status" id="fileStatus">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="currentFileName">script.fn</span>
+      <span class="validation-pill valid" id="validationBadge" title="Click to inspect validation details">✓ Valid .fn</span>
+    </div>
+
+    <div class="topbar-actions">
+      <a href="../mqtt-monitor/index.html" class="btn btn-secondary" style="text-decoration:none;" title="Switch to Real-Time MQTT Monitor">
+        <span>📡</span> MQTT Monitor
+      </a>
+      <input type="file" id="fileInput" accept=".fn,.kst,.txt" hidden />
+      <button class="btn btn-secondary" id="btnNewScript" title="Start a fresh .fn script">
+        <span>＋</span> New
+      </button>
+      <button class="btn btn-secondary" id="btnLoadSample" title="Load sample AAU/script/script.fn">
+        <span>↺</span> Load Sample
+      </button>
+      <button class="btn btn-secondary" id="btnOpenFile" title="Open a .fn script file from disk">
+        <span>📂</span> Open .fn
+      </button>
+      <button class="btn btn-secondary" id="btnSaveDirect" title="Save directly to file handle (if supported by browser)">
+        <span>💾</span> Save
+      </button>
+      <button class="btn btn-primary" id="btnDownloadFile" title="Download script.fn file">
+        <span>⬇</span> Download .fn
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Studio Layout -->
+  <main class="studio-layout">
+    <!-- Left Sidebar: Nodes & Network Topology -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Nodes (<span id="nodeCount">0</span>)</h2>
+        <button class="btn btn-sm btn-primary" id="btnAddNode">＋ Add Node</button>
+      </div>
+
+      <div class="node-search-wrap">
+        <input type="text" id="nodeSearchInput" class="input input-sm" placeholder="Filter nodes by name, ID, role..." />
+      </div>
+
+      <div class="node-list" id="nodeList"></div>
+
+      <!-- Topology Mini-Panel -->
+      <div class="topology-panel">
+        <div class="topology-header">
+          <h3>Network Topology</h3>
+          <span class="topology-hint">Master / Bridge / Slave Map</span>
+        </div>
+        <div class="topology-canvas" id="topologyCanvas"></div>
+      </div>
+    </aside>
+
+    <!-- Center Workspace: Visual Node Editor -->
+    <section class="editor-workspace" id="editorWorkspace">
+      <!-- Populated dynamically by app.js -->
+    </section>
+
+    <!-- Right Panel: Live .fn Code & Diagnostics -->
+    <aside class="code-panel" id="codePanel">
+      <div class="code-panel-header">
+        <div class="code-tabs">
+          <button class="code-tab active" data-code-tab="code">Generated .fn Script</button>
+          <button class="code-tab" data-code-tab="diagnostics">
+            Diagnostics <span class="diag-count" id="diagCount">0</span>
+          </button>
+        </div>
+        <div class="code-actions">
+          <button class="btn btn-xs btn-secondary" id="btnApplyCode" title="Parse manual edits from code editor into visual UI">
+            ⇄ Sync Code → UI
+          </button>
+          <button class="btn btn-xs btn-secondary" id="btnCopyCode" title="Copy .fn script to clipboard">
+            📋 Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Code Editor Tab -->
+      <div class="code-tab-content active" id="tabCodeContent">
+        <div class="code-editor-container">
+          <div class="line-numbers" id="lineNumbers">1</div>
+          <textarea
+            id="codeTextarea"
+            class="code-textarea"
+            spellcheck="false"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+          ></textarea>
+        </div>
+        <div class="code-footer">
+          <label class="checkbox-label">
+            <input type="checkbox" id="chkAutoSyncCode" checked />
+            Auto-sync code edits to visual editor
+          </label>
+          <span id="codeStats">0 lines</span>
+        </div>
+      </div>
+
+      <!-- Diagnostics Tab -->
+      <div class="code-tab-content" id="tabDiagnosticsContent">
+        <div class="diagnostics-list" id="diagnosticsList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Quick Variable Modal (for creating a variable on the fly) -->
+  <div class="modal-backdrop hidden" id="quickVarModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Quick Create Variable</h3>
+        <button class="btn-icon" id="btnCloseQuickVar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Name (with <code>$</code>)</label>
+          <input type="text" id="qvName" class="input" placeholder="$myVar" />
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>Type</label>
+            <select id="qvType" class="select">
+              <option value="int">int</option>
+              <option value="float">float</option>
+              <option value="string">string</option>
+              <option value="array">array</option>
+              <option value="fun">fun</option>
+            </select>
+          </div>
+          <div>
+            <label>Scope</label>
+            <select id="qvGlobal" class="select">
+              <option value="false">Local</option>
+              <option value="true">Global</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Initial Value</label>
+          <input type="text" id="qvValue" class="input input-mono" placeholder="0" />
+        </div>
+        <div class="form-row hidden" id="qvArrayPickerRow">
+          <label>Add Variable to Array (Local or Global from Other Nodes)</label>
+          <div style="display:flex;gap:6px;">
+            <select id="qvArrayVarSelect" class="select select-sm input-mono" style="flex:1;"></select>
+            <button type="button" class="btn btn-xs btn-primary" id="btnQvAddArrayVar">＋ Add to Array</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnCancelQuickVar">Cancel</button>
+        <button class="btn btn-primary" id="btnConfirmQuickVar">Create Variable</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
