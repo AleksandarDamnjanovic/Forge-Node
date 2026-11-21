@@ -14,6 +14,7 @@ FUNCTIONS
 \twrite-variable index name value
 \t\tsets a new value to existing variable. with value arguments, a new value is provided
 \t\t\t\tif variable is of type string, value must be provided within quotation marks
+\t\t\t\tto reset a string force variable back to empty string (""), pass null as value
 
 \tchange-trigger-value index name triggerValue
 \t\twith triggerValue argument, a new value for trigger is provided

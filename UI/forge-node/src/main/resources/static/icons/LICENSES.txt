@@ -1,0 +1,33 @@
+Forge Node UI — Bundled Open-Source SVG Icon Packs (Offline Subset)
+
+Each icon pack is bundled strictly with the ~29 SVG icons used by Forge Node UI:
+
+1. Windows theme — Microsoft Fluent UI System Icons
+   Package: @fluentui/svg-icons v1.1.347
+   Source: https://github.com/microsoft/fluentui-system-icons
+   License: MIT License
+
+2. IOS theme — Ionicons
+   Package: ionicons v8.1.1
+   Source: https://github.com/ionic-team/ionicons
+   License: MIT License
+
+3. AWS theme — AWS Cloudscape Design System Icons
+   Package: @cloudscape-design/components v3.0.1421
+   Source: https://github.com/cloudscape-design/components
+   License: Apache License 2.0
+
+4. Android theme — Google Material Symbols Rounded
+   Package: @material-symbols/svg-400 v0.49.0
+   Source: https://github.com/google/material-design-icons
+   License: Apache License 2.0
+
+5. Lucide Outline — Lucide Static Icons
+   Package: lucide-static v1.77.0
+   Source: https://github.com/lucide-icons/lucide
+   License: ISC License
+
+6. Heroicons Solid — Tailwind Heroicons
+   Package: heroicons v2.2.0
+   Source: https://github.com/tailwindlabs/heroicons
+   License: MIT License

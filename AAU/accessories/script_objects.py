@@ -201,7 +201,10 @@ class variable:
         elif(self.__type.__contains__("float")):
             self.__value = float(value)
         elif(self.__type.__contains__("string")):
-            self.__value = value
+            vStr = "" if value is None else str(value).replace("\"", "")
+            if vStr.lower() == "null":
+                vStr = ""
+            self.__value = vStr
         elif(self.__type.__contains__("array")):
             v = list()
             e= re.findall("[a-zA-Z0-9\\$\\_\\-\\%\"]+", value)

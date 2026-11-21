@@ -1,4 +1,6 @@
 /NODES/Wrappers/Java/store.jsk
 /NODES/Wrappers/Java/ca.crt
-
+/home/irishpub/Programming/Forge Node/shared
+/home/irishpub/Programming/Forge Node/SHARED
+/home/irishpub/Programming/Forge Node/scripts
 /home/irishpub/Programming/Forge Node/UI/mqtt-monitor/certs/*

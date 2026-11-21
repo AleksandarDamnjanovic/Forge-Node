@@ -264,7 +264,9 @@ def writeVar(index, varName, varValue):
     type= variable.getType()
     try:
         if (type.__contains__("string")):
-            varValue = str(varValue)
+            varValue = str(varValue).replace("\"", "")
+            if varValue.lower() == "null":
+                varValue = ""
         elif (type.__contains__("int")):
             varValue = int(varValue)
         elif (type.__contains__("float")):

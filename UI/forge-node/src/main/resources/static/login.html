@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Node — Sign In</title>
+  <link rel="icon" type="image/png" href="/Forge Node Studio Icon.png" />
+  <link rel="stylesheet" href="/script-editor/styles.css" />
+  <script src="/theme.js"></script>
+  <style>
+    .login-card {
+      max-width: 420px;
+      width: 100%;
+    }
+    .login-error {
+      background: rgba(248, 81, 73, 0.14);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: var(--danger);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .pwd-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #loginUsername:focus,
+    #loginUsername:focus-visible,
+    #loginPassword:focus,
+    #loginPassword:focus-visible {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      caret-color: #000000;
+    }
+    #loginUsername:-webkit-autofill,
+    #loginUsername:-webkit-autofill:hover,
+    #loginUsername:-webkit-autofill:focus,
+    #loginUsername:autofill,
+    #loginPassword:-webkit-autofill,
+    #loginPassword:-webkit-autofill:hover,
+    #loginPassword:-webkit-autofill:focus,
+    #loginPassword:autofill {
+      -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+      box-shadow: 0 0 0 1000px #ffffff inset !important;
+      -webkit-text-fill-color: #000000 !important;
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      caret-color: #000000;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+  </style>
+</head>
+<body style="justify-content:center;align-items:center;padding:24px;">
+  <div class="card login-card">
+    <div class="card-header">
+      <div class="brand">
+        <img src="/Forge Node Studio Icon.png" alt="Forge Node" class="brand-logo-img" />
+        <div>
+          <h1 class="brand-title">Forge Node Web Interface</h1>
+          <span class="brand-subtitle">Administrator Sign In</span>
+        </div>
+      </div>
+    </div>
+
+    <form id="loginForm" class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+      <div id="loginError" class="login-error hidden"></div>
+
+      <div class="field-group">
+        <label class="field-label" for="loginUsername">Username</label>
+        <input
+          type="text"
+          id="loginUsername"
+          class="input input-mono"
+          placeholder="admin"
+          autocomplete="username"
+          required
+          autofocus
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="loginPassword">Password</label>
+        <div class="pwd-row">
+          <input
+            type="password"
+            id="loginPassword"
+            class="input input-mono"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="btn btn-secondary btn-sm" id="btnTogglePwd" style="white-space:nowrap;">
+            Show
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="btnSignIn" style="justify-content:center;padding:9px 14px;margin-top:4px;">
+        🔒 Sign In
+      </button>
+    </form>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    (async function checkExistingSession() {
+      try {
+        const res = await fetch("/api/auth/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            window.location.replace("/index.html");
+          }
+        }
+      } catch (_) {}
+    })();
+
+    const elForm = document.getElementById("loginForm");
+    const elUser = document.getElementById("loginUsername");
+    const elPass = document.getElementById("loginPassword");
+    const elErr = document.getElementById("loginError");
+    const elBtn = document.getElementById("btnSignIn");
+
+    document.getElementById("btnTogglePwd").addEventListener("click", (e) => {
+      if (elPass.type === "password") {
+        elPass.type = "text";
+        e.target.textContent = "Hide";
+      } else {
+        elPass.type = "password";
+        e.target.textContent = "Show";
+      }
+    });
+
+    elForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      elErr.classList.add("hidden");
+      elBtn.disabled = true;
+      elBtn.textContent = "Signing in…";
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: elUser.value.trim(),
+            password: elPass.value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Invalid username or password");
+        }
+        window.location.replace("/index.html");
+      } catch (err) {
+        elErr.textContent = err.message || "Authentication failed";
+        elErr.classList.remove("hidden");
+        elBtn.disabled = false;
+        elBtn.textContent = "🔒 Sign In";
+      }
+    });
+  </script>
+</body>
+</html>

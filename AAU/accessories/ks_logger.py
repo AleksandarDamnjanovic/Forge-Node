@@ -15,6 +15,10 @@ import os
 
 def logit(text, type= 0):
 
+    log_dir = os.path.dirname(support.logFile)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
     if not os.path.exists(support.logFile):
         with open(support.logFile, "w") as f:
             f.write("")

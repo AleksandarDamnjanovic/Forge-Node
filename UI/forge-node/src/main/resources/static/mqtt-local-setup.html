@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Node — Local MQTT Server Configuration</title>
+  <link rel="icon" type="image/png" href="/Forge Node Studio Icon.png" />
+  <link rel="stylesheet" href="/script-editor/styles.css" />
+  <script src="/theme.js"></script>
+  <style>
+    body {
+      overflow-y: auto;
+      height: auto;
+      min-height: 100vh;
+    }
+    .setup-wrap {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .setup-card {
+      max-width: 820px;
+      width: 100%;
+    }
+    .picker-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .req-star {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+    .status-banner {
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .status-banner.error {
+      background: rgba(248, 81, 73, 0.14);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: var(--danger);
+    }
+    .status-banner.warn {
+      background: rgba(210, 153, 34, 0.14);
+      border: 1px solid rgba(210, 153, 34, 0.45);
+      color: var(--warning);
+    }
+    .status-banner.success {
+      background: rgba(63, 185, 80, 0.14);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: var(--success);
+    }
+    .user-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-app);
+    }
+    @media (max-width: 640px) {
+      .user-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/Forge Node Studio Icon.png" alt="Forge Node" class="brand-logo-img" />
+      <div>
+        <h1 class="brand-title">Local Mosquitto MQTT Server Setup</h1>
+        <span class="brand-subtitle">Configure <code>helpers/mqtt-configuration.conf</code> &amp; <code>helpers/setupMosquitto_users.sh</code></span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="/index.html" class="btn btn-secondary" style="text-decoration:none;">
+        ← Main Hub
+      </a>
+      <button type="button" class="btn btn-secondary" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>location.href='/login.html')" title="Sign out">
+        Sign Out
+      </button>
+    </div>
+  </header>
+
+  <main class="setup-wrap">
+    <div class="card setup-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-tag">helpers/mqtt-configuration.conf</span>
+          <span class="card-title">Configure New Local MQTT Server</span>
+        </div>
+        <span class="card-subtitle">Host: <code>0.0.0.0:8883</code> (TLS)</span>
+      </div>
+
+      <form id="localMqttForm" class="card-body" style="display:flex;flex-direction:column;gap:18px;">
+        <div id="statusBanner" class="status-banner hidden"></div>
+
+        <!-- .fn Script Detection & Loader Section -->
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-app);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <span style="font-size:12.5px;font-weight:700;color:var(--text-main);">Active <code>.fn</code> Script (Topic Pre-population)</span>
+              <p id="scriptSourceLabel" style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">
+                Checking for loaded <code>.fn</code> script or <code>AAU/script/script.fn</code>…
+              </p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="file" id="fileFnScript" accept=".fn,.kst,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnLoadFnScript">
+                📂 Load .fn Script
+              </button>
+            </div>
+          </div>
+
+          <div id="noScriptWarningBanner" class="status-banner warn hidden">
+            ⚠️ <strong>Warning:</strong> No active <code>.fn</code> script was found in Script Studio or in <code>AAU/script/script.fn</code>. You should first create or load a <code>.fn</code> script to pre-populate user names from node topics and avoid topic/user name mismatches.
+          </div>
+        </div>
+
+        <!-- Certificates Section -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12.5px;font-weight:700;color:var(--text-main);">1. TLS Certificates (Default: <code>SHARED/</code>)</span>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpCaCert">
+              <span>ca.crt (CA Certificate)<span class="req-star">*</span></span>
+            </label>
+            <div class="picker-row">
+              <input type="text" id="inpCaCert" class="input input-mono" placeholder="/path/to/SHARED/ca.crt" required />
+              <input type="file" id="fileCaCert" accept=".crt,.pem,.cer,.ca,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnPickCaCert" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpBrokerCert">
+              <span>broker.crt (Broker Certificate)<span class="req-star">*</span></span>
+            </label>
+            <div class="picker-row">
+              <input type="text" id="inpBrokerCert" class="input input-mono" placeholder="/path/to/SHARED/broker.crt" required />
+              <input type="file" id="fileBrokerCert" accept=".crt,.pem,.cer,.ca,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnPickBrokerCert" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpBrokerKey">
+              <span>broker.key (Broker Private Key)<span class="req-star">*</span></span>
+            </label>
+            <div class="picker-row">
+              <input type="text" id="inpBrokerKey" class="input input-mono" placeholder="/path/to/SHARED/broker.key" required />
+              <input type="file" id="fileBrokerKey" accept=".key,.pem,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnPickBrokerKey" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mosquitto Users Section -->
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px dashed var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <span style="font-size:12.5px;font-weight:700;color:var(--text-main);">2. Mosquitto Users</span>
+              <p style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">
+                First user is always <code>admin</code>. Pre-populated from the active <code>.fn</code> script topic names. Every user must have a username and password.
+              </p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnAddUser">
+              ➕ Add User
+            </button>
+          </div>
+
+          <div id="usersListContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:12px;border-top:1px solid var(--border);">
+          <a href="/index.html" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
+          <button type="submit" class="btn btn-primary" id="btnCreateConfig">
+            💾 Create Configuration
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const STUDIO_STORAGE_KEY = "forge_node_studio_script_v1";
+    const STUDIO_FILENAME_KEY = "forge_node_studio_filename_v1";
+
+    const inpCaCert = document.getElementById("inpCaCert");
+    const fileCaCert = document.getElementById("fileCaCert");
+    const btnPickCaCert = document.getElementById("btnPickCaCert");
+
+    const inpBrokerCert = document.getElementById("inpBrokerCert");
+    const fileBrokerCert = document.getElementById("fileBrokerCert");
+    const btnPickBrokerCert = document.getElementById("btnPickBrokerCert");
+
+    const inpBrokerKey = document.getElementById("inpBrokerKey");
+    const fileBrokerKey = document.getElementById("fileBrokerKey");
+    const btnPickBrokerKey = document.getElementById("btnPickBrokerKey");
+
+    const fileFnScript = document.getElementById("fileFnScript");
+    const btnLoadFnScript = document.getElementById("btnLoadFnScript");
+    const scriptSourceLabel = document.getElementById("scriptSourceLabel");
+    const noScriptWarningBanner = document.getElementById("noScriptWarningBanner");
+
+    const usersListContainer = document.getElementById("usersListContainer");
+    const btnAddUser = document.getElementById("btnAddUser");
+    const localMqttForm = document.getElementById("localMqttForm");
+    const btnCreateConfig = document.getElementById("btnCreateConfig");
+    const statusBanner = document.getElementById("statusBanner");
+
+    let caCertContent = "";
+    let brokerCertContent = "";
+    let brokerKeyContent = "";
+    let userLoadedScriptContent = "";
+    let userLoadedScriptFileName = "";
+    let scriptLoadedOnPage = false;
+
+    function showToast(msg) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 2800);
+    }
+
+    function showBanner(type, text) {
+      statusBanner.className = "status-banner " + type;
+      statusBanner.textContent = text;
+    }
+
+    function extractTopicsFromFnScript(scriptText) {
+      if (!scriptText || !scriptText.trim()) return [];
+      const topics = [];
+      for (const unit of scriptText.split("}")) {
+        if (
+          !unit.includes("MASTER") &&
+          !unit.includes("SLAVE") &&
+          !unit.includes("SHUNT") &&
+          !unit.includes("BRIDGE")
+        ) {
+          continue;
+        }
+        const closeParen = unit.indexOf(")");
+        if (closeParen === -1) continue;
+        const headerRaw = unit.slice(0, closeParen).trim();
+        const quoted = headerRaw.match(/"[^"]*"/g) || [];
+        if (quoted.length >= 2) {
+          const topic = quoted[1].slice(1, -1).trim();
+          if (topic && topic.toLowerCase() !== "admin" && !topics.includes(topic)) {
+            topics.push(topic);
+          }
+        }
+      }
+      return topics;
+    }
+
+    function bindCertPicker(btn, fileInp, textInp, onLoaded) {
+      btn.addEventListener("click", () => fileInp.click());
+      fileInp.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          onLoaded(String(reader.result || ""));
+          textInp.value = file.name;
+          showToast(`Selected "${file.name}"`);
+        };
+        reader.readAsText(file);
+      });
+      textInp.addEventListener("input", () => onLoaded(""));
+    }
+
+    bindCertPicker(btnPickCaCert, fileCaCert, inpCaCert, (c) => { caCertContent = c; });
+    bindCertPicker(btnPickBrokerCert, fileBrokerCert, inpBrokerCert, (c) => { brokerCertContent = c; });
+    bindCertPicker(btnPickBrokerKey, fileBrokerKey, inpBrokerKey, (c) => { brokerKeyContent = c; });
+
+    function addUserRow(username = "", password = "", isAdmin = false) {
+      const row = document.createElement("div");
+      row.className = "user-row";
+
+      const userWrap = document.createElement("div");
+      userWrap.className = "field-group";
+      userWrap.innerHTML = `
+        <label class="field-label"><span>User Name<span class="req-star">*</span></span></label>
+        <input type="text" class="input input-sm input-mono inp-username" placeholder="${isAdmin ? "admin" : "username"}" value="${isAdmin ? "admin" : username}" ${isAdmin ? "readonly" : ""} required />
+      `;
+
+      const passWrap = document.createElement("div");
+      passWrap.className = "field-group";
+      passWrap.innerHTML = `
+        <label class="field-label"><span>Password<span class="req-star">*</span></span></label>
+        <input type="text" class="input input-sm input-mono inp-password" placeholder="password" value="${password}" required />
+      `;
+
+      const actionWrap = document.createElement("div");
+      actionWrap.style.display = "flex";
+      actionWrap.style.alignItems = "flex-end";
+      actionWrap.style.height = "100%";
+      actionWrap.style.paddingBottom = "2px";
+
+      if (isAdmin) {
+        const badge = document.createElement("span");
+        badge.className = "subcard-badge badge-valCondition";
+        badge.textContent = "Primary Admin";
+        actionWrap.appendChild(badge);
+      } else {
+        const btnRemove = document.createElement("button");
+        btnRemove.type = "button";
+        btnRemove.className = "btn btn-danger btn-sm";
+        btnRemove.textContent = "✕ Remove";
+        btnRemove.addEventListener("click", () => row.remove());
+        actionWrap.appendChild(btnRemove);
+      }
+
+      row.appendChild(userWrap);
+      row.appendChild(passWrap);
+      row.appendChild(actionWrap);
+      usersListContainer.appendChild(row);
+    }
+
+    function populateUsersFromTopics(topics, existingPasswordMap = {}) {
+      usersListContainer.innerHTML = "";
+      addUserRow("admin", existingPasswordMap["admin"] || "", true);
+      for (const topic of topics) {
+        if (topic.toLowerCase() === "admin") continue;
+        addUserRow(topic, existingPasswordMap[topic] || "", false);
+      }
+    }
+
+    btnAddUser.addEventListener("click", () => addUserRow("", "", false));
+
+    btnLoadFnScript.addEventListener("click", () => fileFnScript.click());
+    fileFnScript.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const content = String(reader.result || "");
+        const topics = extractTopicsFromFnScript(content);
+        userLoadedScriptContent = content;
+        userLoadedScriptFileName = file.name;
+        scriptLoadedOnPage = true;
+
+        // Collect any passwords already typed in the form so we don't lose them
+        const pwdMap = {};
+        usersListContainer.querySelectorAll(".user-row").forEach((r, idx) => {
+          const uInp = r.querySelector(".inp-username");
+          const pInp = r.querySelector(".inp-password");
+          const u = idx === 0 ? "admin" : (uInp ? uInp.value.trim() : "");
+          if (u && pInp) pwdMap[u] = pInp.value;
+        });
+
+        populateUsersFromTopics(topics, pwdMap);
+        noScriptWarningBanner.classList.add("hidden");
+        scriptSourceLabel.innerHTML = `Loaded <code>${file.name}</code> (${topics.length} node topics extracted — will also load into Script Studio &amp; update <code>mqtt.conf</code> on save)`;
+        scriptSourceLabel.style.color = "var(--success)";
+        showToast(`Loaded ${topics.length} node topics from "${file.name}"`);
+      };
+      reader.readAsText(file);
+    });
+
+    function parseUsersString(usersStr) {
+      if (!usersStr) return [];
+      const trimmed = usersStr.trim().replace(/^\[/, "").replace(/\]$/, "");
+      if (!trimmed) return [];
+      const out = [];
+      for (const part of trimmed.split(",")) {
+        const seg = part.trim();
+        if (!seg || !seg.includes("=")) continue;
+        const eq = seg.indexOf("=");
+        const u = seg.slice(0, eq).trim();
+        const p = seg.slice(eq + 1).trim();
+        if (u) out.push({ username: u, password: p });
+      }
+      return out;
+    }
+
+    async function initSetupPage() {
+      let serverTopics = [];
+      let serverFnExists = false;
+      let serverFnPath = "";
+      let existingPasswordMap = {};
+
+      try {
+        const res = await fetch("/api/mqtt/local-config", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const defaults = data.defaultCerts || {};
+          const details = data.details || {};
+
+          inpCaCert.value = (data.caCertPresent ? defaults.caCert : details["ca.crt"]) || defaults.caCert || "SHARED/ca.crt";
+          inpBrokerCert.value = (data.brokerCertPresent ? defaults.brokerCert : details["broker.crt"]) || defaults.brokerCert || "SHARED/broker.crt";
+          inpBrokerKey.value = (data.brokerKeyPresent ? defaults.brokerKey : details["broker.key"]) || defaults.brokerKey || "SHARED/broker.key";
+
+          const existingUsers = parseUsersString(details["users"]);
+          for (const u of existingUsers) {
+            existingPasswordMap[u.username] = u.password;
+          }
+
+          serverFnExists = Boolean(data.fnScriptExists);
+          serverFnPath = data.fnScriptPath || "AAU/script/script.fn";
+          serverTopics = Array.isArray(data.fnScriptTopics) ? data.fnScriptTopics : [];
+        }
+      } catch (_) {}
+
+      // 1. Check presently active .fn script in Script Studio (localStorage)
+      const studioScript = localStorage.getItem(STUDIO_STORAGE_KEY);
+      const studioFileName = localStorage.getItem(STUDIO_FILENAME_KEY) || "script.fn";
+      const studioTopics = extractTopicsFromFnScript(studioScript || "");
+
+      if (studioTopics.length > 0) {
+        noScriptWarningBanner.classList.add("hidden");
+        scriptSourceLabel.innerHTML = `Using active Script Studio script <code>${studioFileName}</code> (${studioTopics.length} node topics pre-populated)`;
+        scriptSourceLabel.style.color = "var(--success)";
+        populateUsersFromTopics(studioTopics, existingPasswordMap);
+        return;
+      }
+
+      // 2. Fallback to root/AAU/script/script.fn (or AAU/scripts/script.fn) from server
+      if (serverFnExists && serverTopics.length > 0) {
+        noScriptWarningBanner.classList.add("hidden");
+        scriptSourceLabel.innerHTML = `Using <code>${serverFnPath}</code> (${serverTopics.length} node topics pre-populated)`;
+        scriptSourceLabel.style.color = "var(--success)";
+        populateUsersFromTopics(serverTopics, existingPasswordMap);
+        return;
+      }
+
+      // 3. No active script or script.fn found -> show warning banner
+      noScriptWarningBanner.classList.remove("hidden");
+      scriptSourceLabel.textContent = "No active .fn script found.";
+      scriptSourceLabel.style.color = "var(--warning)";
+      populateUsersFromTopics([], existingPasswordMap);
+    }
+
+    localMqttForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusBanner.classList.add("hidden");
+
+      const rows = Array.from(usersListContainer.querySelectorAll(".user-row"));
+      const users = [];
+      for (let i = 0; i < rows.length; i++) {
+        const uInp = rows[i].querySelector(".inp-username");
+        const pInp = rows[i].querySelector(".inp-password");
+        const username = i === 0 ? "admin" : (uInp ? uInp.value.trim() : "");
+        const password = pInp ? pInp.value.trim() : "";
+        if (!username || !password) {
+          showBanner("error", "Every user must have a non-empty username and password.");
+          return;
+        }
+        users.push({ username, password });
+      }
+
+      btnCreateConfig.disabled = true;
+      btnCreateConfig.textContent = "Creating…";
+
+      try {
+        // If user loaded a .fn script on this page, also save it into Script Studio's localStorage
+        if (scriptLoadedOnPage && userLoadedScriptContent.trim()) {
+          localStorage.setItem(STUDIO_STORAGE_KEY, userLoadedScriptContent);
+          localStorage.setItem(STUDIO_FILENAME_KEY, userLoadedScriptFileName || "script.fn");
+        }
+
+        const payload = {
+          caCert: inpCaCert.value.trim(),
+          brokerCert: inpBrokerCert.value.trim(),
+          brokerKey: inpBrokerKey.value.trim(),
+          caCertContent,
+          brokerCertContent,
+          brokerKeyContent,
+          users,
+          scriptLoadedOnPage,
+          loadedScriptContent: userLoadedScriptContent,
+          loadedScriptFileName: userLoadedScriptFileName
+        };
+
+        const res = await fetch("/api/mqtt/local-config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to create local MQTT configuration");
+        }
+        showToast("Created helpers/mqtt-configuration.conf");
+        window.location.href = "/index.html";
+      } catch (err) {
+        showBanner("error", err.message);
+        showToast(err.message);
+      } finally {
+        btnCreateConfig.disabled = false;
+        btnCreateConfig.textContent = "💾 Create Configuration";
+      }
+    });
+
+    initSetupPage();
+  </script>
+</body>
+</html>

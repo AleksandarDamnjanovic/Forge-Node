@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Node Dashboard</title>
+  <link rel="icon" type="image/png" href="Forge Node Studio Icon.png" />
+  <link rel="stylesheet" href="script-editor/styles.css" />
+  <script src="/theme.js"></script>
+  <style>
+    body {
+      height: auto;
+      min-height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .hub-card {
+      max-width: 1220px;
+      width: 100%;
+      margin: auto 0;
+    }
+    .hub-header {
+      padding: 18px 22px;
+      background: linear-gradient(135deg, rgba(47, 129, 247, 0.14) 0%, rgba(163, 113, 247, 0.08) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .hub-logo-img {
+      width: 108px;
+      height: 108px;
+      border-radius: 16px;
+      object-fit: contain;
+      flex-shrink: 0;
+      filter: drop-shadow(0 4px 14px rgba(47, 129, 247, 0.35));
+    }
+    .hub-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      background: linear-gradient(90deg, #ffffff 0%, #58a6ff 55%, #a371f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 18px rgba(88, 166, 255, 0.25);
+    }
+    .hub-subtitle {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .hub-github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .hub-github-link:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+    #hubCardBody {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+    .span-2 {
+      grid-column: span 2;
+    }
+    .span-1 {
+      grid-column: span 1;
+    }
+    .aau-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-app);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .aau-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: var(--text-dim);
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .aau-dot.running {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+    @media (max-width: 980px) {
+      #hubCardBody {
+        grid-template-columns: 1fr 1fr;
+      }
+      .span-2 {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (max-width: 640px) {
+      #hubCardBody,
+      #remoteMqttFieldsWrap,
+      #localMqttDetailsList {
+        grid-template-columns: 1fr !important;
+      }
+      .span-2,
+      .span-1 {
+        grid-column: 1 / -1 !important;
+      }
+      .hub-logo-img {
+        width: 72px;
+        height: 72px;
+      }
+      .hub-title {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card hub-card">
+    <div class="card-header hub-header">
+      <div class="brand" style="gap:18px;">
+        <img src="Forge Node Studio Icon.png" alt="Forge Node" class="hub-logo-img" />
+        <div style="display:flex;flex-direction:column;align-items:flex-start;">
+          <h1 class="hub-title">Forge Node Dashboard</h1>
+          <span class="hub-subtitle">Central Control Hub for Scripts, Telemetry, AAU, MQTT Broker &amp; TLS Certificates</span>
+          <a href="https://github.com/AleksandarDamnjanovic/Forge-Node" target="_blank" rel="noopener noreferrer" class="hub-github-link">
+            <span>🔗</span> https://github.com/AleksandarDamnjanovic/Forge-Node
+          </a>
+          <a href="https://www.youtube.com/@kindspirittechnology" target="_blank" rel="noopener noreferrer" class="hub-github-link" style="margin-top:3px;">
+            <span>▶️</span> https://www.youtube.com/@kindspirittechnology
+          </a>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="aau-status-pill" id="fullConfigStatusPill" title="Status of saved Forge Node instance configuration (AAU/script/full-configuration/full-configuration.conf)">
+            <span class="aau-dot" id="fullConfigStatusDot"></span>
+            <span id="fullConfigStatusLabel">No default configuration</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" id="btnSaveFullConfig" title="Save all current Forge Node settings to AAU/script/full-configuration/full-configuration.conf">
+            💾 Save Present Forge Node Instance Configuration
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>location.href='/login.html')" title="Sign out">
+            Sign Out
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <label for="selColorTheme" style="font-size:11px;color:var(--text-muted);font-weight:600;">Palette</label>
+            <select id="selColorTheme" class="select select-sm" style="min-width:150px;"></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <label for="selUiStyle" style="font-size:11px;color:var(--text-muted);font-weight:600;">UI Style</label>
+            <select id="selUiStyle" class="select select-sm" style="min-width:165px;"></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <label for="selIconPack" style="font-size:11px;color:var(--text-muted);font-weight:600;">Icons</label>
+            <select id="selIconPack" class="select select-sm" style="min-width:170px;"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" id="hubCardBody">
+      <div class="subcard span-1" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <a href="script-editor/index.html" style="text-decoration:none;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:8px;flex:1;">
+          <div class="subcard-top">
+            <span class="card-title">📝 .fn Script Studio</span>
+            <span class="subcard-badge badge-valCondition">Editor</span>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
+            Visual editor, code generator, and validator for Forge Node <code>.fn</code> scripts (variables, sensors, elements, programs).
+          </p>
+        </a>
+      </div>
+
+      <div class="subcard span-1" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <a href="mqtt-monitor/index.html" style="text-decoration:none;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:8px;">
+          <div class="subcard-top">
+            <span class="card-title">📡 MQTT Real-Time Monitor</span>
+            <span class="subcard-badge badge-switch">Live MQTT</span>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
+            Connect to the MQTT server (IP, port, certificate, username, password) and monitor real-time node topics parsed from <code>AAU/script/working.fn</code>.
+          </p>
+        </a>
+        <div style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px dashed var(--border);">
+          <span style="font-size:11px;color:var(--text-dim);">
+            Note: The MQTT Bridge must be active in order to use the MQTT Monitor.
+          </span>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <div class="aau-status-pill" id="bridgeIndicator">
+              <span class="aau-dot" id="bridgeDot"></span>
+              <span id="bridgeLabel">Bridge: Stopped</span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <label for="inpBridgePort" style="font-size:11.5px;color:var(--text-muted);font-weight:600;">Bridge Port</label>
+              <input type="text" inputmode="numeric" id="inpBridgePort" class="input input-sm input-mono" value="8765" maxlength="5" style="width:82px;" title="Bridge Port (1000 - 65535)" />
+              <button type="button" class="btn btn-primary btn-sm" id="btnActivateBridge">
+                ▶ Activate Bridge
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm hidden" id="btnStopBridge">
+                ⏹ Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subcard span-1" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="subcard-top">
+            <span class="card-title">⚙️ Auxiliary Automation Unit (AAU)</span>
+            <span class="subcard-badge badge-timeLim">AAU</span>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
+            Configure and run the local Auxiliary Automation Unit (<code>AAU/configuration.conf</code>, <code>AAU/base.py</code>) or use a remote AAU instance.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed var(--border);">
+            <label class="checkbox-label" style="font-size:12.5px;font-weight:600;">
+              <input type="checkbox" id="chkRemoteAau" checked />
+              <span>Remote AAU</span>
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnDashboardLoadAauConfig" disabled>
+                🗄 Load Config
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btnSetupAau" disabled>
+                ⚙️ Set up AAU
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed var(--border);">
+            <div class="aau-status-pill" id="localAauIndicator">
+              <span class="aau-dot" id="localAauDot"></span>
+              <span id="localAauLabel">Local AAU: Stopped</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn btn-secondary btn-sm hidden" id="btnStopLocalAau">
+                ⏹ Stop
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btnStartLocalAau" disabled>
+                ▶ Start local AAU
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subcard span-2">
+        <div class="subcard-top">
+          <span class="card-title">🔌 MQTT Server Connection</span>
+          <span class="subcard-badge badge-switch">MQTT</span>
+        </div>
+        <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
+          Configure the remote MQTT server connection parameters stored in <code>mqtt-monitor/mqtt.conf</code> or use a local MQTT server.
+        </p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed var(--border);">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <label class="checkbox-label" style="font-size:12.5px;font-weight:600;">
+              <input type="checkbox" id="chkRemoteMqtt" checked />
+              <span>Remote MQTT Server</span>
+            </label>
+          </div>
+          <div id="remoteMqttActionsWrap" class="hidden" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="fileImportRemoteMqtt" accept=".conf,.cfg,.txt" hidden />
+            <button type="button" class="btn btn-secondary btn-sm" id="btnLoadRemoteFromContainer" title="Load Remote MQTT config from container AAU/script/">
+              🗄 Load
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnSaveRemoteToContainer" title="Save present Remote MQTT config into container AAU/script/">
+              💾 Save
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnImportRemoteMqtt" title="Upload Remote MQTT config from your computer">
+              ⬆ Upload
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnExportRemoteMqtt" title="Download present Remote MQTT config to your computer">
+              ⬇ Download
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnSaveRemoteMqtt" title="Apply inputs to mqtt-monitor/mqtt.conf">
+              ✓ Apply
+            </button>
+          </div>
+        </div>
+
+        <div id="remoteMqttMonitorNotice" style="padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-app);color:var(--text-muted);font-size:12.5px;">
+          In case of using remote MQTT Server, connect to it from mqtt monitor
+        </div>
+
+        <div id="remoteMqttFieldsWrap" class="hidden" style="display:none;grid-template-columns:1fr 1fr;gap:12px;padding-top:8px;border-top:1px dashed var(--border);">
+          <div class="field-group">
+            <label class="field-label" for="inpMqttCaCert">
+              <span>CA Certificate</span>
+            </label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="inpMqttCaCert" class="input input-sm input-mono" placeholder="/path/to/ca.crt" />
+              <input type="file" id="fileMqttCaCert" accept=".crt,.pem,.cer,.ca,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnPickMqttCaCert" style="white-space:nowrap;">
+                📂 Browse
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpMqttBrokerCert">
+              <span>Broker Certificate</span>
+            </label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="inpMqttBrokerCert" class="input input-sm input-mono" placeholder="/path/to/broker.crt" />
+              <input type="file" id="fileMqttBrokerCert" accept=".crt,.pem,.cer,.ca,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnPickMqttBrokerCert" style="white-space:nowrap;">
+                📂 Browse
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpMqttUsername">
+              <span>User Name</span>
+            </label>
+            <input type="text" id="inpMqttUsername" class="input input-sm input-mono" placeholder="admin" />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpMqttPassword">
+              <span>Password</span>
+              <button type="button" id="btnToggleMqttPwd" class="btn btn-xs btn-secondary" style="padding:1px 6px;">Show</button>
+            </label>
+            <input type="password" id="inpMqttPassword" class="input input-sm input-mono" placeholder="••••••••" />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpMqttIp">
+              <span>MQTT Server IP Address</span>
+            </label>
+            <input type="text" id="inpMqttIp" class="input input-sm input-mono" placeholder="192.168.0.24" />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="inpMqttPort">
+              <span>Port Number</span>
+            </label>
+            <input type="number" id="inpMqttPort" class="input input-sm input-mono" min="1" max="65535" placeholder="8883" />
+          </div>
+        </div>
+
+        <div id="localMqttWrap" class="hidden" style="display:flex;flex-direction:column;gap:10px;padding-top:8px;border-top:1px dashed var(--border);">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+              <button type="button" class="btn btn-primary btn-sm" id="btnUsePresentMqttConfig">
+                ▶ Use present configuration
+              </button>
+              <div class="aau-status-pill" id="localMqttStatusPill">
+                <span class="aau-dot" id="localMqttStatusDot"></span>
+                <span id="localMqttStatusLabel">No present configuration</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-sm" id="btnApplyLocalMqttConfig">
+                ⚙️ Apply configuration
+              </button>
+              <button type="button" class="btn btn-primary btn-sm hidden" id="btnStartLocalMqttServer">
+                ▶ Start server
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm hidden" id="btnStopLocalMqttServer">
+                ⏹ Stop server
+              </button>
+              <input type="file" id="fileImportLocalMqtt" accept=".conf,.cfg,.txt" hidden />
+              <button type="button" class="btn btn-secondary btn-sm" id="btnLoadLocalFromContainer" title="Load Local MQTT config from container AAU/script/">
+                🗄 Load
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnSaveLocalToContainer" title="Save present Local MQTT config into container AAU/script/">
+                💾 Save
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnImportLocalMqtt" title="Upload Local MQTT config from your computer">
+                ⬆ Upload
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnExportLocalMqtt" title="Download present Local MQTT config to your computer">
+                ⬇ Download
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnConfigureNewLocalMqtt">
+                ⚙️ Configure new local MQTT server
+              </button>
+            </div>
+          </div>
+
+          <div id="localMqttDetailsBox" class="hidden" style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-app);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span style="font-size:11.5px;font-weight:600;color:var(--text-main);">Present Local MQTT Configuration</span>
+              <code style="font-size:11px;color:var(--text-muted);">helpers/mqtt-configuration.conf</code>
+            </div>
+            <div id="localDefaultConfigHint" style="font-size:11px;color:var(--text-muted);"></div>
+            <div id="localMqttDetailsList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-family:var(--font-mono);font-size:11.5px;color:var(--text-muted);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subcard span-1" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="subcard-top">
+            <span class="card-title">🔐 Certificates</span>
+            <span class="subcard-badge badge-valCondition">SHARED</span>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
+            Manage TLS certificates (<code>ca.crt</code>, <code>broker.crt</code>, <code>broker.key</code>) in <code>SHARED/</code>.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:8px;border-top:1px dashed var(--border);">
+          <div class="aau-status-pill" id="certsStatusPill" style="align-self:flex-start;">
+            <span class="aau-dot" id="certsStatusDot"></span>
+            <span id="certsStatusLabel">Checking certificates…</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCertDetails" style="grid-column:1 / -1;">
+              🔍 Certificate Details
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnBackupCerts">
+              📦 Backup
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRestoreCerts">
+              ♻️ Restore
+            </button>
+            <input type="file" id="fileUploadCerts" multiple accept=".crt,.key,.pem,.cer,.ca,.csr" hidden />
+            <button type="button" class="btn btn-secondary btn-sm" id="btnUploadCerts">
+              ⬆ Upload
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnDownloadCerts">
+              ⬇ Download
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnCreateReplaceCerts">
+              🔄 Create / Replace
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" id="btnDeleteCerts">
+              🗑 Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Expose AU (always available) & AAU Logs (visible when Local AAU is running) -->
+      <div class="subcard span-2 hidden" id="aauLogsSegment" style="display:flex;flex-direction:column;gap:10px;">
+        <div class="subcard-top">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="card-title">📜 AAU Logs</span>
+            <code style="font-size:11px;color:var(--text-muted);">AAU/script/log.txt</code>
+          </div>
+          <span class="subcard-badge badge-timeLim">Real-Time</span>
+        </div>
+        <pre id="aauLogsOutput" style="margin:0;padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-app);color:var(--text-main);font-family:var(--font-mono);font-size:11.5px;line-height:1.45;height:210px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;">Waiting for log output from AAU/script/log.txt…</pre>
+      </div>
+
+      <div class="subcard span-1" id="exposeAuSegment" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="subcard-top">
+            <span class="card-title">🤖 Expose AU</span>
+            <span class="subcard-badge badge-valCondition">TCP</span>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
+            Expose the Administrative Unit (<code>AU/au.py tcp &lt;port&gt;</code>) for AI skill &amp; external TCP client integration.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:8px;border-top:1px dashed var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <label class="checkbox-label" style="font-size:12.5px;font-weight:600;">
+              <input type="checkbox" id="chkExposeAu" />
+              <span>Expose AU</span>
+            </label>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <div class="aau-status-pill" id="auConfigStatusPill" title="Status of AAU/script/au configuration/au-configuration.conf">
+                <span class="aau-dot" id="auConfigStatusDot"></span>
+                <span id="auConfigStatusLabel">AU Config: Not set</span>
+              </div>
+              <div class="aau-status-pill" id="auStatusPill">
+                <span class="aau-dot" id="auStatusDot"></span>
+                <span id="auStatusLabel">AU: Stopped</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="exposeAuControlsWrap" class="hidden" style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px dashed var(--border);">
+            <div id="auNotConfiguredHint" class="hidden" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(210,153,34,0.45);background:rgba(210,153,34,0.12);color:var(--warning);font-size:11.5px;">
+              ⚠️ AU configuration is not set. Click <strong>Set up AU</strong> before starting AU.
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <label for="inpAuPort" style="font-size:11.5px;color:var(--text-muted);font-weight:600;">Port</label>
+                <input type="text" inputmode="numeric" id="inpAuPort" class="input input-sm input-mono" value="10010" maxlength="5" style="width:82px;" title="AU TCP Port (1000 - 65535)" />
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnSetupAu">
+                  ⚙️ Set up AU
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnStartAu">
+                  ▶ Start serving
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm hidden" id="btnStopAu">
+                  ⏹ Stop
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog Modal for Certificate Deletion / Replacement -->
+  <div class="modal-backdrop hidden" id="certsConfirmModal">
+    <div class="modal" style="width:440px;max-width:94vw;">
+      <div class="modal-header">
+        <h3 id="certsConfirmTitle">Confirm Action</h3>
+        <button type="button" class="btn-icon" id="btnCloseCertsConfirm">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="certsConfirmMessage" style="font-size:12.5px;color:var(--text-main);line-height:1.5;margin:0;"></p>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelCertsConfirm">Cancel</button>
+        <button type="button" class="btn btn-danger" id="btnProceedCertsConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificate Details Dialog Modal -->
+  <div class="modal-backdrop hidden" id="certsDetailsModal">
+    <div class="modal" style="width:720px;max-width:95vw;">
+      <div class="modal-header">
+        <h3>🔐 Certificate Details</h3>
+        <button type="button" class="btn-icon" id="btnCloseCertsDetails">✕</button>
+      </div>
+      <div class="modal-body" id="certsDetailsBody" style="max-height:72vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
+        <p style="font-size:12.5px;color:var(--text-muted);margin:0;">Loading certificate details…</p>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnFooterCloseCertsDetails">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save MQTT Configuration to Container Modal -->
+  <div class="modal-backdrop hidden" id="saveMqttConfigModal">
+    <div class="modal" style="width:460px;max-width:94vw;">
+      <div class="modal-header">
+        <h3 id="saveMqttConfigTitle">💾 Save MQTT Configuration to AAU/script/</h3>
+        <button type="button" class="btn-icon" id="btnCloseSaveMqttConfig">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="field-group">
+          <label class="field-label" for="inpSaveMqttConfigName">
+            <span>Configuration Name (saved in <code id="saveMqttDirPath">AAU/script/</code>)</span>
+          </label>
+          <input type="text" id="inpSaveMqttConfigName" class="input input-mono" placeholder="my-mqtt.conf" />
+        </div>
+        <label id="saveMqttSetDefaultRow" class="hidden" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-main);cursor:pointer;">
+          <input type="checkbox" id="chkSaveMqttDefault" />
+          <span>Set as default local MQTT connection (saved in <code>default-configuration</code>)</span>
+        </label>
+        <div class="field-group">
+          <span style="font-size:11.5px;color:var(--text-muted);">Existing matching configs in <code id="saveMqttListDirPath">AAU/script/</code> (click to overwrite):</span>
+          <div id="saveMqttExistingList" style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelSaveMqttConfig">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmSaveMqttConfig">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load MQTT Configuration from Container Modal -->
+  <div class="modal-backdrop hidden" id="loadMqttConfigModal">
+    <div class="modal" style="width:460px;max-width:94vw;">
+      <div class="modal-header">
+        <h3 id="loadMqttConfigTitle">🗄 Load MQTT Configuration from AAU/script/</h3>
+        <button type="button" class="btn-icon" id="btnCloseLoadMqttConfig">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+        <label id="loadMqttSetDefaultRow" class="hidden" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-main);cursor:pointer;">
+          <input type="checkbox" id="chkLoadMqttDefault" />
+          <span>Set loaded configuration as default local MQTT connection</span>
+        </label>
+        <div id="loadMqttConfigList" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelLoadMqttConfig">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Local AAU Configuration from Container Modal -->
+  <div class="modal-backdrop hidden" id="loadAauConfigModalDashboard">
+    <div class="modal" style="width:460px;max-width:94vw;">
+      <div class="modal-header">
+        <h3>🗄 Load Local AAU Configuration</h3>
+        <button type="button" class="btn-icon" id="btnCloseLoadAauDash">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+        <label class="checkbox-label" style="font-size:12px;">
+          <input type="checkbox" id="chkDashSetAauDefault" />
+          <span>Set loaded configuration as default (<code>default-configuration</code>)</span>
+        </label>
+        <div id="loadAauDashList" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelLoadAauDash">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const chkRemoteAau = document.getElementById("chkRemoteAau");
+    const btnDashboardLoadAauConfig = document.getElementById("btnDashboardLoadAauConfig");
+    const btnSetupAau = document.getElementById("btnSetupAau");
+    const btnStartLocalAau = document.getElementById("btnStartLocalAau");
+    const btnStopLocalAau = document.getElementById("btnStopLocalAau");
+    const localAauDot = document.getElementById("localAauDot");
+    const localAauLabel = document.getElementById("localAauLabel");
+
+    // --- AAU Logs & Expose AU Controls ---
+    const aauLogsSegment = document.getElementById("aauLogsSegment");
+    const aauLogsOutput = document.getElementById("aauLogsOutput");
+    const exposeAuSegment = document.getElementById("exposeAuSegment");
+    const chkExposeAu = document.getElementById("chkExposeAu");
+    const exposeAuControlsWrap = document.getElementById("exposeAuControlsWrap");
+    const inpAuPort = document.getElementById("inpAuPort");
+    const btnSetupAu = document.getElementById("btnSetupAu");
+    const btnStartAu = document.getElementById("btnStartAu");
+    const btnStopAu = document.getElementById("btnStopAu");
+    const auStatusDot = document.getElementById("auStatusDot");
+    const auStatusLabel = document.getElementById("auStatusLabel");
+    const auConfigStatusDot = document.getElementById("auConfigStatusDot");
+    const auConfigStatusLabel = document.getElementById("auConfigStatusLabel");
+    const auNotConfiguredHint = document.getElementById("auNotConfiguredHint");
+
+    let isLocalRunning = false;
+    let isAuRunning = false;
+    let isAuStarting = false;
+    let isAuConfigured = false;
+    let activeAuPort = 10010;
+    let lastAauLogText = "";
+
+    function showToast(msg) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 2800);
+    }
+
+    function updateExposeAuControls() {
+      const isExposed = chkExposeAu.checked;
+      if (isExposed) {
+        exposeAuControlsWrap.classList.remove("hidden");
+        exposeAuControlsWrap.style.display = "flex";
+      } else {
+        exposeAuControlsWrap.classList.add("hidden");
+        exposeAuControlsWrap.style.display = "none";
+      }
+
+      if (auConfigStatusDot && auConfigStatusLabel) {
+        if (isAuConfigured) {
+          auConfigStatusDot.classList.add("running");
+          auConfigStatusLabel.textContent = "AU Config: Ready";
+          auConfigStatusLabel.style.color = "var(--success)";
+        } else {
+          auConfigStatusDot.classList.remove("running");
+          auConfigStatusLabel.textContent = "AU Config: Not set";
+          auConfigStatusLabel.style.color = "var(--warning)";
+        }
+      }
+      if (auNotConfiguredHint) {
+        auNotConfiguredHint.classList.toggle("hidden", isAuConfigured || !isExposed);
+      }
+
+      const disableStart = !isExposed || isAuRunning || isAuStarting || !isAuConfigured;
+      btnStartAu.disabled = disableStart;
+      btnStartAu.style.opacity = disableStart ? "0.5" : "1";
+      btnStartAu.style.cursor = disableStart ? "not-allowed" : "pointer";
+      btnStartAu.title = !isAuConfigured
+        ? "Configure AU settings first (click Set up AU)"
+        : "Start AU TCP server";
+      inpAuPort.disabled = isAuRunning || isAuStarting;
+
+      if (isAuStarting) {
+        btnStartAu.textContent = "Starting…";
+      } else if (!btnStartAu.textContent.includes("Start serving")) {
+        btnStartAu.textContent = "▶ Start serving";
+      }
+
+      if (isAuRunning) {
+        auStatusDot.classList.add("running");
+        auStatusLabel.textContent = `AU: Serving (${activeAuPort})`;
+        auStatusLabel.style.color = "var(--success)";
+        inpAuPort.value = activeAuPort;
+        btnStopAu.classList.remove("hidden");
+      } else {
+        auStatusDot.classList.remove("running");
+        auStatusLabel.textContent = "AU: Stopped";
+        auStatusLabel.style.color = "var(--text-muted)";
+        btnStopAu.classList.add("hidden");
+      }
+    }
+
+    async function fetchAauLogs() {
+      if (!isLocalRunning) return;
+      try {
+        const res = await fetch("/api/aau/logs", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const content = data.content || "";
+          const textToShow = content.trim() ? content : "AAU/script/log.txt is empty.";
+          if (textToShow !== lastAauLogText) {
+            const wasAtBottom =
+              aauLogsOutput.scrollHeight - aauLogsOutput.scrollTop - aauLogsOutput.clientHeight <= 24;
+            lastAauLogText = textToShow;
+            aauLogsOutput.textContent = textToShow;
+            if (wasAtBottom) {
+              aauLogsOutput.scrollTop = aauLogsOutput.scrollHeight;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    function updateAauControls() {
+      const isRemote = chkRemoteAau.checked;
+
+      btnSetupAau.disabled = isRemote;
+      btnSetupAau.style.opacity = isRemote ? "0.5" : "1";
+      btnSetupAau.style.cursor = isRemote ? "not-allowed" : "pointer";
+
+      btnDashboardLoadAauConfig.disabled = isRemote;
+      btnDashboardLoadAauConfig.style.opacity = isRemote ? "0.5" : "1";
+      btnDashboardLoadAauConfig.style.cursor = isRemote ? "not-allowed" : "pointer";
+
+      const disableStart = isRemote || isLocalRunning;
+      btnStartLocalAau.disabled = disableStart;
+      btnStartLocalAau.style.opacity = disableStart ? "0.5" : "1";
+      btnStartLocalAau.style.cursor = disableStart ? "not-allowed" : "pointer";
+
+      if (isLocalRunning) {
+        localAauDot.classList.add("running");
+        localAauLabel.textContent = "Local AAU: Running";
+        localAauLabel.style.color = "var(--success)";
+        btnStopLocalAau.classList.remove("hidden");
+
+        aauLogsSegment.classList.remove("hidden");
+        aauLogsSegment.style.display = "flex";
+        fetchAauLogs();
+      } else {
+        localAauDot.classList.remove("running");
+        localAauLabel.textContent = "Local AAU: Stopped";
+        localAauLabel.style.color = "var(--text-muted)";
+        btnStopLocalAau.classList.add("hidden");
+
+        aauLogsSegment.classList.add("hidden");
+        aauLogsSegment.style.display = "none";
+      }
+    }
+
+    async function saveAauSettingsImmediately() {
+      try {
+        await fetch("/api/aau/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            remoteAau: chkRemoteAau.checked
+          })
+        });
+      } catch (_) {}
+    }
+
+    async function saveAuSettingsImmediately() {
+      try {
+        const portVal = parseInt(inpAuPort.value, 10) || activeAuPort;
+        await fetch("/api/au/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            exposeAu: chkExposeAu.checked,
+            auPort: portVal
+          })
+        });
+      } catch (_) {}
+    }
+
+    chkRemoteAau.addEventListener("change", () => {
+      if (!chkRemoteAau.checked && chkRemoteMqtt && chkRemoteMqtt.checked) {
+        chkRemoteMqtt.checked = false;
+        updateRemoteMqttControls();
+        saveMqttFlagsImmediately();
+      }
+      updateAauControls();
+      saveAauSettingsImmediately();
+    });
+
+    chkExposeAu.addEventListener("change", () => {
+      updateExposeAuControls();
+      saveAuSettingsImmediately();
+    });
+
+    inpAuPort.addEventListener("input", () => {
+      let digits = inpAuPort.value.replace(/[^0-9]/g, "");
+      if (digits.length > 0 && parseInt(digits, 10) > 65535) {
+        digits = "65535";
+      }
+      inpAuPort.value = digits;
+    });
+
+    inpAuPort.addEventListener("blur", () => {
+      const val = parseInt(inpAuPort.value, 10);
+      if (isNaN(val)) {
+        inpAuPort.value = "10010";
+      } else if (val < 1000) {
+        inpAuPort.value = "1000";
+      } else if (val > 65535) {
+        inpAuPort.value = "65535";
+      }
+      activeAuPort = parseInt(inpAuPort.value, 10);
+      saveAuSettingsImmediately();
+    });
+
+    if (btnSetupAu) {
+      btnSetupAu.addEventListener("click", () => {
+        window.location.href = "/au-setup.html";
+      });
+    }
+
+    btnStartAu.addEventListener("click", async () => {
+      if (!chkExposeAu.checked || isAuRunning || isAuStarting) return;
+      if (!isAuConfigured) {
+        showToast("AU configuration is not set. Please configure AU first.");
+        return;
+      }
+      const port = parseInt(inpAuPort.value, 10);
+      if (!port || port < 1000 || port > 65535) {
+        showToast("AU port must be a number between 1000 and 65535");
+        return;
+      }
+      isAuStarting = true;
+      updateExposeAuControls();
+      try {
+        const res = await fetch("/api/au/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ port })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to start AU");
+        }
+        isAuRunning = Boolean(data.auRunning);
+        activeAuPort = Number(data.auPort) || port;
+        showToast(`AU serving TCP on port ${activeAuPort} (synced with forge-node-skill)`);
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        isAuStarting = false;
+        updateExposeAuControls();
+      }
+    });
+
+    btnStopAu.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/au/stop", { method: "POST" });
+        const data = await res.json();
+        isAuRunning = Boolean(data.auRunning);
+        showToast("AU server stopped");
+      } catch (_) {}
+      updateExposeAuControls();
+    });
+
+    btnSetupAau.addEventListener("click", () => {
+      if (!chkRemoteAau.checked) {
+        window.location.href = "/aau-setup.html";
+      }
+    });
+
+    const loadAauDashModal = document.getElementById("loadAauConfigModalDashboard");
+    const loadAauDashList = document.getElementById("loadAauDashList");
+    const chkDashSetAauDefault = document.getElementById("chkDashSetAauDefault");
+    const closeLoadAauDash = () => loadAauDashModal.classList.add("hidden");
+    document.getElementById("btnCloseLoadAauDash").addEventListener("click", closeLoadAauDash);
+    document.getElementById("btnCancelLoadAauDash").addEventListener("click", closeLoadAauDash);
+
+    btnDashboardLoadAauConfig.addEventListener("click", async () => {
+      if (chkRemoteAau.checked) return;
+      loadAauDashModal.classList.remove("hidden");
+      loadAauDashList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Loading…</div>';
+      try {
+        const res = await fetch("/api/aau/configs/list", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to list AAU configurations");
+        const data = await res.json();
+        const files = Array.isArray(data.files) ? data.files : [];
+        loadAauDashList.innerHTML = "";
+        if (!files.length) {
+          loadAauDashList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No saved configurations in AAU/script/localAAUconfigurations/.</div>';
+          return;
+        }
+        for (const f of files) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn btn-secondary btn-sm";
+          btn.style.cssText = "display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);text-align:left;";
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = f.name;
+          btn.appendChild(nameSpan);
+          if (f.isDefault) {
+            const badge = document.createElement("span");
+            badge.className = "subcard-badge badge-valCondition";
+            badge.textContent = "DEFAULT";
+            btn.appendChild(badge);
+          }
+          btn.addEventListener("click", async () => {
+            try {
+              const loadRes = await fetch("/api/aau/configs/load", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  fileName: f.name,
+                  setAsDefault: chkDashSetAauDefault.checked
+                })
+              });
+              const loadData = await loadRes.json();
+              if (!loadRes.ok || !loadData.ok) {
+                throw new Error(loadData.error || "Failed to load configuration");
+              }
+              closeLoadAauDash();
+              showToast(`Loaded AAU config "${loadData.fileName}"`);
+            } catch (err) {
+              showToast(err.message || "Failed to load AAU configuration");
+            }
+          });
+          loadAauDashList.appendChild(btn);
+        }
+      } catch (err) {
+        loadAauDashList.innerHTML = `<div style="font-size:12px;color:var(--danger);">${escapeHtml(err.message)}</div>`;
+      }
+    });
+
+    btnStartLocalAau.addEventListener("click", async () => {
+      if (chkRemoteAau.checked || isLocalRunning) return;
+      btnStartLocalAau.disabled = true;
+      btnStartLocalAau.textContent = "Starting…";
+      try {
+        const res = await fetch("/api/aau/start", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to start local AAU");
+        }
+        isLocalRunning = Boolean(data.localAauRunning);
+        showToast("Local AAU (AAU/base.py) started");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnStartLocalAau.textContent = "▶ Start local AAU";
+        updateAauControls();
+      }
+    });
+
+    btnStopLocalAau.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/aau/stop", { method: "POST" });
+        const data = await res.json();
+        isLocalRunning = Boolean(data.localAauRunning);
+        showToast("Local AAU stopped");
+      } catch (_) {}
+      updateAauControls();
+    });
+
+    async function refreshAauStatus(initRemoteCheckbox = false) {
+      try {
+        const res = await fetch("/api/aau/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (initRemoteCheckbox) {
+            chkRemoteAau.checked = Boolean(data.remoteAau);
+          }
+          isLocalRunning = Boolean(data.localAauRunning);
+        }
+      } catch (_) {}
+      updateAauControls();
+    }
+
+    async function refreshAuStatus(initAuControls = false) {
+      try {
+        const res = await fetch("/api/au/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (initAuControls) {
+            if (data.exposeAu !== undefined) {
+              chkExposeAu.checked = Boolean(data.exposeAu);
+            }
+            if (data.auPort) {
+              activeAuPort = Number(data.auPort);
+              inpAuPort.value = activeAuPort;
+            }
+          }
+          isAuRunning = Boolean(data.auRunning);
+          isAuConfigured = Boolean(data.auConfigured);
+          if (data.auPort) activeAuPort = Number(data.auPort);
+        }
+      } catch (_) {}
+      updateExposeAuControls();
+    }
+
+    refreshAauStatus(true);
+    refreshAuStatus(true);
+    setInterval(() => refreshAauStatus(false), 3000);
+    setInterval(() => refreshAuStatus(false), 3000);
+    setInterval(fetchAauLogs, 1000);
+
+    // --- MQTT Bridge Controls ---
+    const btnActivateBridge = document.getElementById("btnActivateBridge");
+    const btnStopBridge = document.getElementById("btnStopBridge");
+    const inpBridgePort = document.getElementById("inpBridgePort");
+    const bridgeDot = document.getElementById("bridgeDot");
+    const bridgeLabel = document.getElementById("bridgeLabel");
+    let isBridgeRunning = false;
+    let isBridgeStarting = false;
+    let activeBridgePort = 8765;
+
+    function updateBridgeControls() {
+      const disableActivate = isBridgeRunning || isBridgeStarting;
+      btnActivateBridge.disabled = disableActivate;
+      btnActivateBridge.style.opacity = disableActivate ? "0.5" : "1";
+      btnActivateBridge.style.cursor = disableActivate ? "not-allowed" : "pointer";
+      inpBridgePort.disabled = disableActivate;
+
+      if (isBridgeStarting) {
+        btnActivateBridge.textContent = "Starting…";
+      } else if (!btnActivateBridge.textContent.includes("Activate Bridge")) {
+        btnActivateBridge.textContent = "▶ Activate Bridge";
+      }
+
+      if (isBridgeRunning) {
+        bridgeDot.classList.add("running");
+        bridgeLabel.textContent = `Bridge: Active (${activeBridgePort})`;
+        bridgeLabel.style.color = "var(--success)";
+        inpBridgePort.value = activeBridgePort;
+        btnStopBridge.classList.remove("hidden");
+      } else {
+        bridgeDot.classList.remove("running");
+        bridgeLabel.textContent = "Bridge: Stopped";
+        bridgeLabel.style.color = "var(--text-muted)";
+        btnStopBridge.classList.add("hidden");
+      }
+    }
+
+    inpBridgePort.addEventListener("input", () => {
+      let digits = inpBridgePort.value.replace(/[^0-9]/g, "");
+      if (digits.length > 0 && parseInt(digits, 10) > 65535) {
+        digits = "65535";
+      }
+      inpBridgePort.value = digits;
+    });
+
+    inpBridgePort.addEventListener("blur", () => {
+      const val = parseInt(inpBridgePort.value, 10);
+      if (isNaN(val)) {
+        inpBridgePort.value = "8765";
+      } else if (val < 1000) {
+        inpBridgePort.value = "1000";
+      } else if (val > 65535) {
+        inpBridgePort.value = "65535";
+      }
+    });
+
+    btnActivateBridge.addEventListener("click", async () => {
+      if (isBridgeRunning || isBridgeStarting) return;
+      const port = parseInt(inpBridgePort.value, 10);
+      if (!port || port < 1000 || port > 65535) {
+        showToast("Bridge port must be a number between 1000 and 65535");
+        return;
+      }
+      isBridgeStarting = true;
+      updateBridgeControls();
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      try {
+        const res = await fetch("/api/bridge/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ port }),
+          signal: controller.signal
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to activate MQTT bridge");
+        }
+        isBridgeRunning = Boolean(data.running);
+        activeBridgePort = Number(data.port) || port;
+        showToast(`MQTT Bridge activated on port ${activeBridgePort}`);
+      } catch (err) {
+        if (err.name === "AbortError") {
+          showToast("Bridge start timed out");
+        } else {
+          showToast(err.message);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        isBridgeStarting = false;
+        updateBridgeControls();
+      }
+    });
+
+    btnStopBridge.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/bridge/stop", { method: "POST" });
+        const data = await res.json();
+        isBridgeRunning = Boolean(data.running);
+        if (data.port) activeBridgePort = Number(data.port);
+        showToast("MQTT Bridge stopped");
+      } catch (_) {}
+      updateBridgeControls();
+    });
+
+    async function refreshBridgeStatus(initPort = false) {
+      try {
+        const res = await fetch("/api/bridge/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          isBridgeRunning = Boolean(data.running);
+          if (data.port) {
+            activeBridgePort = Number(data.port);
+            if (initPort) inpBridgePort.value = activeBridgePort;
+          }
+        }
+      } catch (_) {}
+      updateBridgeControls();
+    }
+
+    refreshBridgeStatus(true);
+    setInterval(() => refreshBridgeStatus(false), 3000);
+
+    // --- Remote & Local MQTT Server Connection Controls ---
+    const chkRemoteMqtt = document.getElementById("chkRemoteMqtt");
+    const remoteMqttActionsWrap = document.getElementById("remoteMqttActionsWrap");
+    const btnSaveRemoteMqtt = document.getElementById("btnSaveRemoteMqtt");
+    const btnLoadRemoteFromContainer = document.getElementById("btnLoadRemoteFromContainer");
+    const btnSaveRemoteToContainer = document.getElementById("btnSaveRemoteToContainer");
+    const btnExportRemoteMqtt = document.getElementById("btnExportRemoteMqtt");
+    const btnImportRemoteMqtt = document.getElementById("btnImportRemoteMqtt");
+    const fileImportRemoteMqtt = document.getElementById("fileImportRemoteMqtt");
+    const remoteMqttMonitorNotice = document.getElementById("remoteMqttMonitorNotice");
+    const remoteMqttFieldsWrap = document.getElementById("remoteMqttFieldsWrap");
+    const localMqttWrap = document.getElementById("localMqttWrap");
+    const btnUsePresentMqttConfig = document.getElementById("btnUsePresentMqttConfig");
+    const btnApplyLocalMqttConfig = document.getElementById("btnApplyLocalMqttConfig");
+    const btnStartLocalMqttServer = document.getElementById("btnStartLocalMqttServer");
+    const btnStopLocalMqttServer = document.getElementById("btnStopLocalMqttServer");
+    const btnLoadLocalFromContainer = document.getElementById("btnLoadLocalFromContainer");
+    const btnSaveLocalToContainer = document.getElementById("btnSaveLocalToContainer");
+    const btnExportLocalMqtt = document.getElementById("btnExportLocalMqtt");
+    const btnImportLocalMqtt = document.getElementById("btnImportLocalMqtt");
+    const fileImportLocalMqtt = document.getElementById("fileImportLocalMqtt");
+    const btnConfigureNewLocalMqtt = document.getElementById("btnConfigureNewLocalMqtt");
+    const localMqttStatusDot = document.getElementById("localMqttStatusDot");
+    const localMqttStatusLabel = document.getElementById("localMqttStatusLabel");
+    const localMqttDetailsBox = document.getElementById("localMqttDetailsBox");
+    const localDefaultConfigHint = document.getElementById("localDefaultConfigHint");
+    const localMqttDetailsList = document.getElementById("localMqttDetailsList");
+
+    const inpMqttCaCert = document.getElementById("inpMqttCaCert");
+    const fileMqttCaCert = document.getElementById("fileMqttCaCert");
+    const btnPickMqttCaCert = document.getElementById("btnPickMqttCaCert");
+    const inpMqttBrokerCert = document.getElementById("inpMqttBrokerCert");
+    const fileMqttBrokerCert = document.getElementById("fileMqttBrokerCert");
+    const btnPickMqttBrokerCert = document.getElementById("btnPickMqttBrokerCert");
+    const inpMqttUsername = document.getElementById("inpMqttUsername");
+    const inpMqttPassword = document.getElementById("inpMqttPassword");
+    const btnToggleMqttPwd = document.getElementById("btnToggleMqttPwd");
+    const inpMqttIp = document.getElementById("inpMqttIp");
+    const inpMqttPort = document.getElementById("inpMqttPort");
+
+    let pendingCaCertFileName = "";
+    let pendingCaCertContent = "";
+    let pendingBrokerCertFileName = "";
+    let pendingBrokerCertContent = "";
+    let localMqttConfigExists = false;
+    let localMqttConfigApplied = false;
+    let isLocalMqttRunning = false;
+    let localMqttConfigDetails = {};
+    let localMqttConfigContent = "";
+    let localDefaultConfigName = "";
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderLocalMqttDetails() {
+      if (localMqttConfigExists) {
+        if (isLocalMqttRunning) {
+          localMqttStatusDot.classList.add("running");
+          localMqttStatusLabel.textContent = "Running";
+          localMqttStatusLabel.style.color = "var(--success)";
+        } else {
+          localMqttStatusDot.classList.remove("running");
+          localMqttStatusLabel.textContent = "Not running";
+          localMqttStatusLabel.style.color = "var(--text-muted)";
+        }
+
+        btnUsePresentMqttConfig.disabled = false;
+        btnUsePresentMqttConfig.style.opacity = "1";
+        btnUsePresentMqttConfig.style.cursor = "pointer";
+
+        btnApplyLocalMqttConfig.disabled = false;
+        btnApplyLocalMqttConfig.style.opacity = "1";
+        btnApplyLocalMqttConfig.style.cursor = "pointer";
+
+        btnExportLocalMqtt.disabled = false;
+        btnExportLocalMqtt.style.opacity = "1";
+        btnExportLocalMqtt.style.cursor = "pointer";
+
+        btnSaveLocalToContainer.disabled = false;
+        btnSaveLocalToContainer.style.opacity = "1";
+        btnSaveLocalToContainer.style.cursor = "pointer";
+
+        if (localMqttConfigApplied) {
+          btnStartLocalMqttServer.classList.remove("hidden");
+          btnStopLocalMqttServer.classList.remove("hidden");
+
+          btnStartLocalMqttServer.disabled = isLocalMqttRunning;
+          btnStartLocalMqttServer.style.opacity = isLocalMqttRunning ? "0.5" : "1";
+          btnStartLocalMqttServer.style.cursor = isLocalMqttRunning ? "not-allowed" : "pointer";
+
+          btnStopLocalMqttServer.disabled = !isLocalMqttRunning;
+          btnStopLocalMqttServer.style.opacity = !isLocalMqttRunning ? "0.5" : "1";
+          btnStopLocalMqttServer.style.cursor = !isLocalMqttRunning ? "not-allowed" : "pointer";
+        } else {
+          btnStartLocalMqttServer.classList.add("hidden");
+          btnStopLocalMqttServer.classList.add("hidden");
+        }
+
+        localMqttDetailsBox.classList.remove("hidden");
+        localDefaultConfigHint.innerHTML = localDefaultConfigName
+          ? `Default local config: <code>${escapeHtml(localDefaultConfigName)}</code>`
+          : `Default local config: <span>none</span>`;
+
+        const entries = Object.entries(localMqttConfigDetails || {});
+        if (entries.length > 0) {
+          localMqttDetailsList.innerHTML = entries
+            .map(([k, v]) => `<div><strong style="color:var(--text-main);">${escapeHtml(k)}:</strong> <span>${escapeHtml(v)}</span></div>`)
+            .join("");
+        } else if (localMqttConfigContent && localMqttConfigContent.trim()) {
+          localMqttDetailsList.innerHTML = `<pre style="grid-column:1 / -1;margin:0;white-space:pre-wrap;">${escapeHtml(localMqttConfigContent.trim())}</pre>`;
+        } else {
+          localMqttDetailsList.innerHTML = `<div style="grid-column:1 / -1;">Configuration file is empty.</div>`;
+        }
+      } else {
+        localMqttStatusDot.classList.remove("running");
+        localMqttStatusLabel.textContent = "No present configuration";
+        localMqttStatusLabel.style.color = "var(--text-muted)";
+
+        btnUsePresentMqttConfig.disabled = true;
+        btnUsePresentMqttConfig.style.opacity = "0.5";
+        btnUsePresentMqttConfig.style.cursor = "not-allowed";
+
+        btnApplyLocalMqttConfig.disabled = true;
+        btnApplyLocalMqttConfig.style.opacity = "0.5";
+        btnApplyLocalMqttConfig.style.cursor = "not-allowed";
+
+        btnExportLocalMqtt.disabled = true;
+        btnExportLocalMqtt.style.opacity = "0.5";
+        btnExportLocalMqtt.style.cursor = "not-allowed";
+
+        btnSaveLocalToContainer.disabled = true;
+        btnSaveLocalToContainer.style.opacity = "0.5";
+        btnSaveLocalToContainer.style.cursor = "not-allowed";
+
+        btnStartLocalMqttServer.classList.add("hidden");
+        btnStopLocalMqttServer.classList.add("hidden");
+
+        localMqttDetailsBox.classList.add("hidden");
+        localDefaultConfigHint.innerHTML = "";
+        localMqttDetailsList.innerHTML = "";
+      }
+    }
+
+    function updateRemoteMqttControls() {
+      const isRemote = chkRemoteMqtt.checked;
+      remoteMqttFieldsWrap.classList.add("hidden");
+      remoteMqttFieldsWrap.style.display = "none";
+      remoteMqttActionsWrap.classList.add("hidden");
+      remoteMqttActionsWrap.style.display = "none";
+      if (isRemote) {
+        remoteMqttMonitorNotice.classList.remove("hidden");
+        remoteMqttMonitorNotice.style.display = "block";
+        localMqttWrap.classList.add("hidden");
+        localMqttWrap.style.display = "none";
+      } else {
+        remoteMqttMonitorNotice.classList.add("hidden");
+        remoteMqttMonitorNotice.style.display = "none";
+        localMqttWrap.classList.remove("hidden");
+        localMqttWrap.style.display = "flex";
+        renderLocalMqttDetails();
+      }
+    }
+
+    async function saveMqttFlagsImmediately() {
+      try {
+        const res = await fetch("/api/mqtt/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            remoteMqtt: chkRemoteMqtt.checked
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.remoteMqtt !== undefined) chkRemoteMqtt.checked = Boolean(data.remoteMqtt);
+          updateRemoteMqttControls();
+        }
+      } catch (_) {}
+    }
+
+    chkRemoteMqtt.addEventListener("change", () => {
+      updateRemoteMqttControls();
+      saveMqttFlagsImmediately();
+    });
+
+    btnConfigureNewLocalMqtt.addEventListener("click", () => {
+      window.location.href = "/mqtt-local-setup.html";
+    });
+
+    async function applyPresentLocalMqttConfig() {
+      if (!localMqttConfigExists) return;
+      btnApplyLocalMqttConfig.disabled = true;
+      btnApplyLocalMqttConfig.textContent = "Applying…";
+      try {
+        const res = await fetch("/api/mqtt/local-apply", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to apply local Mosquitto configuration");
+        }
+        localMqttConfigApplied = Boolean(data.localConfigApplied);
+        isLocalMqttRunning = Boolean(data.localMqttRunning);
+        showToast("Local Mosquitto configuration applied");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnApplyLocalMqttConfig.textContent = "⚙️ Apply configuration";
+        renderLocalMqttDetails();
+      }
+    }
+
+    btnUsePresentMqttConfig.addEventListener("click", applyPresentLocalMqttConfig);
+    btnApplyLocalMqttConfig.addEventListener("click", applyPresentLocalMqttConfig);
+
+    btnStartLocalMqttServer.addEventListener("click", async () => {
+      if (!localMqttConfigExists || !localMqttConfigApplied || isLocalMqttRunning) return;
+      btnStartLocalMqttServer.disabled = true;
+      btnStartLocalMqttServer.textContent = "Starting…";
+      try {
+        const res = await fetch("/api/mqtt/local-start", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to start local Mosquitto server");
+        }
+        isLocalMqttRunning = Boolean(data.localMqttRunning);
+        showToast("Local Mosquitto server started");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnStartLocalMqttServer.textContent = "▶ Start server";
+        renderLocalMqttDetails();
+      }
+    });
+
+    btnStopLocalMqttServer.addEventListener("click", async () => {
+      if (!localMqttConfigExists || !isLocalMqttRunning) return;
+      btnStopLocalMqttServer.disabled = true;
+      btnStopLocalMqttServer.textContent = "Stopping…";
+      try {
+        const res = await fetch("/api/mqtt/local-stop", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to stop local Mosquitto server");
+        }
+        isLocalMqttRunning = Boolean(data.localMqttRunning);
+        showToast("Local Mosquitto server stopped");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnStopLocalMqttServer.textContent = "⏹ Stop server";
+        renderLocalMqttDetails();
+      }
+    });
+
+    btnToggleMqttPwd.addEventListener("click", () => {
+      if (inpMqttPassword.type === "password") {
+        inpMqttPassword.type = "text";
+        btnToggleMqttPwd.textContent = "Hide";
+      } else {
+        inpMqttPassword.type = "password";
+        btnToggleMqttPwd.textContent = "Show";
+      }
+    });
+
+    btnPickMqttCaCert.addEventListener("click", () => {
+      if (!chkRemoteMqtt.checked) return;
+      fileMqttCaCert.click();
+    });
+
+    fileMqttCaCert.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingCaCertFileName = file.name;
+        pendingCaCertContent = String(reader.result || "");
+        inpMqttCaCert.value = file.name;
+        showToast(`CA Certificate "${file.name}" selected`);
+      };
+      reader.readAsText(file);
+    });
+
+    inpMqttCaCert.addEventListener("input", () => {
+      pendingCaCertFileName = "";
+      pendingCaCertContent = "";
+    });
+
+    btnPickMqttBrokerCert.addEventListener("click", () => {
+      if (!chkRemoteMqtt.checked) return;
+      fileMqttBrokerCert.click();
+    });
+
+    fileMqttBrokerCert.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingBrokerCertFileName = file.name;
+        pendingBrokerCertContent = String(reader.result || "");
+        inpMqttBrokerCert.value = file.name;
+        showToast(`Broker Certificate "${file.name}" selected`);
+      };
+      reader.readAsText(file);
+    });
+
+    inpMqttBrokerCert.addEventListener("input", () => {
+      pendingBrokerCertFileName = "";
+      pendingBrokerCertContent = "";
+    });
+
+    async function loadMqttMonitorConfig(initFields = true) {
+      try {
+        const res = await fetch("/api/mqtt/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (initFields) {
+            if (data.remoteMqtt !== undefined) {
+              chkRemoteMqtt.checked = Boolean(data.remoteMqtt);
+            }
+            const cfg = data.config || {};
+            if (cfg.ca_cert_path !== undefined) inpMqttCaCert.value = cfg.ca_cert_path;
+            if (cfg.broker_cert_path !== undefined) inpMqttBrokerCert.value = cfg.broker_cert_path;
+            if (cfg.username !== undefined) inpMqttUsername.value = cfg.username;
+            if (cfg.password !== undefined) inpMqttPassword.value = cfg.password;
+            if (cfg.ip !== undefined) inpMqttIp.value = cfg.ip;
+            if (cfg.port !== undefined) inpMqttPort.value = cfg.port;
+          }
+
+          localMqttConfigExists = Boolean(data.localConfigExists);
+          localMqttConfigApplied = Boolean(data.localConfigApplied);
+          isLocalMqttRunning = Boolean(data.localMqttRunning);
+          localMqttConfigDetails = data.localConfigDetails || {};
+          localMqttConfigContent = data.localConfigContent || "";
+          localDefaultConfigName = data.localDefaultConfig || "";
+        }
+      } catch (_) {}
+      if (initFields) {
+        updateRemoteMqttControls();
+      } else if (!chkRemoteMqtt.checked) {
+        renderLocalMqttDetails();
+      }
+    }
+
+    btnSaveRemoteMqtt.addEventListener("click", async () => {
+      if (!chkRemoteMqtt.checked) return;
+      const ip = inpMqttIp.value.trim();
+      const port = parseInt(inpMqttPort.value, 10);
+      if (!ip) {
+        showToast("MQTT Server IP Address is required");
+        return;
+      }
+      if (!port || port < 1 || port > 65535) {
+        showToast("Port Number must be between 1 and 65535");
+        return;
+      }
+
+      btnSaveRemoteMqtt.disabled = true;
+      btnSaveRemoteMqtt.textContent = "Saving…";
+      try {
+        const payload = {
+          configured: true,
+          ca_cert_path: inpMqttCaCert.value.trim(),
+          broker_cert_path: inpMqttBrokerCert.value.trim(),
+          username: inpMqttUsername.value.trim(),
+          password: inpMqttPassword.value,
+          ip,
+          port
+        };
+        if (pendingCaCertContent) {
+          payload.caCertFileName = pendingCaCertFileName;
+          payload.caCertContent = pendingCaCertContent;
+        }
+        if (pendingBrokerCertContent) {
+          payload.brokerCertFileName = pendingBrokerCertFileName;
+          payload.brokerCertContent = pendingBrokerCertContent;
+        }
+
+        const res = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to save MQTT configuration");
+        }
+        const cfg = data.config || {};
+        if (cfg.ca_cert_path) inpMqttCaCert.value = cfg.ca_cert_path;
+        if (cfg.broker_cert_path) inpMqttBrokerCert.value = cfg.broker_cert_path;
+        pendingCaCertFileName = "";
+        pendingCaCertContent = "";
+        pendingBrokerCertFileName = "";
+        pendingBrokerCertContent = "";
+        showToast("Saved MQTT configuration to mqtt.conf");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnSaveRemoteMqtt.disabled = false;
+        btnSaveRemoteMqtt.textContent = "✓ Apply";
+        updateRemoteMqttControls();
+      }
+    });
+
+    function applyRemoteConfigFields(cfg) {
+      if (!cfg) return;
+      if (cfg.ca_cert_path !== undefined) inpMqttCaCert.value = cfg.ca_cert_path;
+      if (cfg.broker_cert_path !== undefined) inpMqttBrokerCert.value = cfg.broker_cert_path;
+      if (cfg.username !== undefined) inpMqttUsername.value = cfg.username;
+      if (cfg.password !== undefined) inpMqttPassword.value = cfg.password;
+      if (cfg.ip !== undefined) inpMqttIp.value = cfg.ip;
+      if (cfg.port !== undefined) inpMqttPort.value = cfg.port;
+    }
+
+    async function uploadSingleConfigFile(fileInput, endpoint, onSuccess) {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch(endpoint, { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to upload configuration");
+        }
+        if (typeof onSuccess === "function") await onSuccess(data);
+      } catch (err) {
+        showToast(err.message || "Failed to upload configuration");
+      } finally {
+        fileInput.value = "";
+      }
+    }
+
+    async function ensureRemoteFormApplied() {
+      if (inpMqttIp.value.trim() && parseInt(inpMqttPort.value, 10)) {
+        btnSaveRemoteMqtt.click();
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
+
+    // Save / Load MQTT Configurations inside Container
+    const saveMqttConfigModal = document.getElementById("saveMqttConfigModal");
+    const saveMqttConfigTitle = document.getElementById("saveMqttConfigTitle");
+    const saveMqttDirPath = document.getElementById("saveMqttDirPath");
+    const saveMqttListDirPath = document.getElementById("saveMqttListDirPath");
+    const saveMqttSetDefaultRow = document.getElementById("saveMqttSetDefaultRow");
+    const chkSaveMqttDefault = document.getElementById("chkSaveMqttDefault");
+    const inpSaveMqttConfigName = document.getElementById("inpSaveMqttConfigName");
+    const saveMqttExistingList = document.getElementById("saveMqttExistingList");
+    const loadMqttConfigModal = document.getElementById("loadMqttConfigModal");
+    const loadMqttConfigTitle = document.getElementById("loadMqttConfigTitle");
+    const loadMqttSetDefaultRow = document.getElementById("loadMqttSetDefaultRow");
+    const chkLoadMqttDefault = document.getElementById("chkLoadMqttDefault");
+    const loadMqttConfigList = document.getElementById("loadMqttConfigList");
+    let activeMqttModalType = "remote";
+
+    const closeSaveMqttConfigModal = () => saveMqttConfigModal.classList.add("hidden");
+    const closeLoadMqttConfigModal = () => loadMqttConfigModal.classList.add("hidden");
+
+    document.getElementById("btnCloseSaveMqttConfig").addEventListener("click", closeSaveMqttConfigModal);
+    document.getElementById("btnCancelSaveMqttConfig").addEventListener("click", closeSaveMqttConfigModal);
+    document.getElementById("btnCloseLoadMqttConfig").addEventListener("click", closeLoadMqttConfigModal);
+    document.getElementById("btnCancelLoadMqttConfig").addEventListener("click", closeLoadMqttConfigModal);
+
+    async function fetchContainerMqttConfigs(type) {
+      const dirLabel = type === "local" ? "AAU/script/local-mqtt-server/" : "AAU/script/";
+      const res = await fetch(`/api/mqtt/configs/list?type=${encodeURIComponent(type)}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to list configurations in ${dirLabel}`);
+      const data = await res.json();
+      return Array.isArray(data.files) ? data.files : [];
+    }
+
+    async function openSaveMqttModal(type) {
+      activeMqttModalType = type;
+      const dirLabel = type === "local" ? "AAU/script/local-mqtt-server/" : "AAU/script/";
+      saveMqttConfigTitle.textContent =
+        type === "local"
+          ? "💾 Save Local MQTT Config to AAU/script/local-mqtt-server/"
+          : "💾 Save Remote MQTT Config to AAU/script/";
+      saveMqttDirPath.textContent = dirLabel;
+      saveMqttListDirPath.textContent = dirLabel;
+      chkSaveMqttDefault.checked = false;
+      if (type === "local") {
+        saveMqttSetDefaultRow.classList.remove("hidden");
+        saveMqttSetDefaultRow.style.display = "flex";
+      } else {
+        saveMqttSetDefaultRow.classList.add("hidden");
+        saveMqttSetDefaultRow.style.display = "none";
+      }
+      inpSaveMqttConfigName.value = type === "local" ? "local-mqtt.conf" : "remote-mqtt.conf";
+      saveMqttConfigModal.classList.remove("hidden");
+      inpSaveMqttConfigName.focus();
+      inpSaveMqttConfigName.select();
+
+      saveMqttExistingList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Loading…</div>';
+      try {
+        const files = await fetchContainerMqttConfigs(type);
+        saveMqttExistingList.innerHTML = "";
+        if (!files.length) {
+          saveMqttExistingList.innerHTML = `<div style="font-size:12px;color:var(--text-muted);">No saved ${type} configs in ${dirLabel} yet.</div>`;
+          return;
+        }
+        for (const f of files) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn btn-secondary btn-sm";
+          btn.textContent = f.isDefault ? `${f.name} (default)` : f.name;
+          btn.style.cssText = "justify-content:flex-start;font-family:var(--font-mono);text-align:left;";
+          btn.addEventListener("click", () => { inpSaveMqttConfigName.value = f.name; });
+          saveMqttExistingList.appendChild(btn);
+        }
+      } catch (err) {
+        saveMqttExistingList.innerHTML = `<div style="font-size:12px;color:var(--danger);">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    document.getElementById("btnConfirmSaveMqttConfig").addEventListener("click", async () => {
+      let fileName = inpSaveMqttConfigName.value.trim();
+      if (!fileName) {
+        showToast("Configuration filename is required");
+        return;
+      }
+      if (!fileName.toLowerCase().endsWith(".conf")) {
+        fileName += ".conf";
+      }
+      if (activeMqttModalType === "remote") {
+        await ensureRemoteFormApplied();
+      }
+      const setAsDefault = activeMqttModalType === "local" && chkSaveMqttDefault.checked;
+      const dirLabel = activeMqttModalType === "local" ? "AAU/script/local-mqtt-server/" : "AAU/script/";
+      try {
+        const res = await fetch("/api/mqtt/configs/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: activeMqttModalType, fileName, setAsDefault })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to save configuration");
+        }
+        closeSaveMqttConfigModal();
+        if (activeMqttModalType === "local") {
+          await loadMqttMonitorConfig(false);
+        }
+        showToast(`Saved ${data.fileName} to ${dirLabel}${data.isDefault ? " (set as default)" : ""}`);
+      } catch (err) {
+        showToast(err.message || "Failed to save configuration");
+      }
+    });
+
+    async function openLoadMqttModal(type) {
+      activeMqttModalType = type;
+      const dirLabel = type === "local" ? "AAU/script/local-mqtt-server/" : "AAU/script/";
+      loadMqttConfigTitle.textContent =
+        type === "local"
+          ? "🗄 Load Local MQTT Config from AAU/script/local-mqtt-server/"
+          : "🗄 Load Remote MQTT Config from AAU/script/";
+      chkLoadMqttDefault.checked = false;
+      if (type === "local") {
+        loadMqttSetDefaultRow.classList.remove("hidden");
+        loadMqttSetDefaultRow.style.display = "flex";
+      } else {
+        loadMqttSetDefaultRow.classList.add("hidden");
+        loadMqttSetDefaultRow.style.display = "none";
+      }
+      loadMqttConfigModal.classList.remove("hidden");
+      loadMqttConfigList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Loading…</div>';
+      try {
+        const files = await fetchContainerMqttConfigs(type);
+        loadMqttConfigList.innerHTML = "";
+        if (!files.length) {
+          loadMqttConfigList.innerHTML = `<div style="font-size:12px;color:var(--text-muted);">No ${type} MQTT configs found in ${dirLabel}.</div>`;
+          return;
+        }
+        for (const f of files) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn btn-secondary btn-sm";
+          btn.textContent = f.isDefault ? `${dirLabel}${f.name} (default)` : `${dirLabel}${f.name}`;
+          btn.style.cssText = "justify-content:flex-start;font-family:var(--font-mono);text-align:left;";
+          btn.addEventListener("click", async () => {
+            const setAsDefault = type === "local" && chkLoadMqttDefault.checked;
+            try {
+              const res = await fetch("/api/mqtt/configs/load", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type, fileName: f.name, setAsDefault })
+              });
+              const data = await res.json();
+              if (!res.ok || !data.ok) {
+                throw new Error(data.error || "Failed to load configuration");
+              }
+              closeLoadMqttConfigModal();
+              if (type === "remote") {
+                applyRemoteConfigFields(data.config);
+                showToast(`Loaded Remote MQTT config "${f.name}" into mqtt.conf`);
+              } else {
+                await loadMqttMonitorConfig(false);
+                showToast(`Loaded Local MQTT config "${f.name}"${data.isDefault ? " (set as default)" : ""}`);
+              }
+            } catch (err) {
+              showToast(err.message || "Failed to load configuration");
+            }
+          });
+          loadMqttConfigList.appendChild(btn);
+        }
+      } catch (err) {
+        loadMqttConfigList.innerHTML = `<div style="font-size:12px;color:var(--danger);">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    btnSaveRemoteToContainer.addEventListener("click", () => {
+      if (chkRemoteMqtt.checked) openSaveMqttModal("remote");
+    });
+
+    btnLoadRemoteFromContainer.addEventListener("click", () => {
+      if (chkRemoteMqtt.checked) openLoadMqttModal("remote");
+    });
+
+    btnSaveLocalToContainer.addEventListener("click", () => {
+      if (!localMqttConfigExists) return;
+      openSaveMqttModal("local");
+    });
+
+    btnLoadLocalFromContainer.addEventListener("click", () => openLoadMqttModal("local"));
+
+    btnExportRemoteMqtt.addEventListener("click", async () => {
+      if (!chkRemoteMqtt.checked) return;
+      await ensureRemoteFormApplied();
+      await downloadFromEndpoint(
+        "/api/mqtt/remote-config/download",
+        "forge-node-remote-mqtt.conf",
+        "No remote MQTT configuration found"
+      );
+    });
+
+    btnImportRemoteMqtt.addEventListener("click", () => {
+      if (chkRemoteMqtt.checked) fileImportRemoteMqtt.click();
+    });
+
+    fileImportRemoteMqtt.addEventListener("change", () =>
+      uploadSingleConfigFile(fileImportRemoteMqtt, "/api/mqtt/remote-config/upload", (data) => {
+        applyRemoteConfigFields(data.config);
+        showToast("Uploaded Remote MQTT configuration");
+      })
+    );
+
+    btnExportLocalMqtt.addEventListener("click", async () => {
+      if (!localMqttConfigExists) return;
+      await downloadFromEndpoint(
+        "/api/mqtt/local-config/download",
+        "forge-node-local-mqtt.conf",
+        "No local MQTT configuration found"
+      );
+    });
+
+    btnImportLocalMqtt.addEventListener("click", () => fileImportLocalMqtt.click());
+
+    fileImportLocalMqtt.addEventListener("change", () =>
+      uploadSingleConfigFile(fileImportLocalMqtt, "/api/mqtt/local-config/upload", async () => {
+        await loadMqttMonitorConfig(false);
+        showToast("Uploaded Local MQTT configuration (helpers/mqtt-configuration.conf)");
+      })
+    );
+
+    loadMqttMonitorConfig(true);
+    setInterval(() => loadMqttMonitorConfig(false), 3000);
+
+    // --- Certificates Management Controls ---
+    const certsStatusDot = document.getElementById("certsStatusDot");
+    const certsStatusLabel = document.getElementById("certsStatusLabel");
+    const btnBackupCerts = document.getElementById("btnBackupCerts");
+    const btnRestoreCerts = document.getElementById("btnRestoreCerts");
+    const btnCreateReplaceCerts = document.getElementById("btnCreateReplaceCerts");
+    const btnDeleteCerts = document.getElementById("btnDeleteCerts");
+    const btnCertDetails = document.getElementById("btnCertDetails");
+
+    const certsDetailsModal = document.getElementById("certsDetailsModal");
+    const certsDetailsBody = document.getElementById("certsDetailsBody");
+    const btnCloseCertsDetails = document.getElementById("btnCloseCertsDetails");
+    const btnFooterCloseCertsDetails = document.getElementById("btnFooterCloseCertsDetails");
+
+    const certsConfirmModal = document.getElementById("certsConfirmModal");
+    const certsConfirmTitle = document.getElementById("certsConfirmTitle");
+    const certsConfirmMessage = document.getElementById("certsConfirmMessage");
+    const btnCloseCertsConfirm = document.getElementById("btnCloseCertsConfirm");
+    const btnCancelCertsConfirm = document.getElementById("btnCancelCertsConfirm");
+    const btnProceedCertsConfirm = document.getElementById("btnProceedCertsConfirm");
+
+    let areCertsPresent = false;
+    let isBackupPresent = false;
+    let isCertsActionRunning = false;
+    let pendingCertsConfirmAction = null;
+
+    function updateCertsUI() {
+      if (areCertsPresent) {
+        certsStatusDot.classList.add("running");
+        certsStatusLabel.textContent = "Certificates present";
+        certsStatusLabel.style.color = "var(--success)";
+      } else {
+        certsStatusDot.classList.remove("running");
+        certsStatusLabel.textContent = "Certificates not present";
+        certsStatusLabel.style.color = "var(--text-muted)";
+      }
+
+      const disableBackupOrDelete = !areCertsPresent || isCertsActionRunning;
+      btnBackupCerts.disabled = disableBackupOrDelete;
+      btnBackupCerts.style.opacity = disableBackupOrDelete ? "0.5" : "1";
+      btnBackupCerts.style.cursor = disableBackupOrDelete ? "not-allowed" : "pointer";
+
+      const disableRestore = !isBackupPresent || isCertsActionRunning;
+      btnRestoreCerts.disabled = disableRestore;
+      btnRestoreCerts.style.opacity = disableRestore ? "0.5" : "1";
+      btnRestoreCerts.style.cursor = disableRestore ? "not-allowed" : "pointer";
+
+      btnDeleteCerts.disabled = disableBackupOrDelete;
+      btnDeleteCerts.style.opacity = disableBackupOrDelete ? "0.5" : "1";
+      btnDeleteCerts.style.cursor = disableBackupOrDelete ? "not-allowed" : "pointer";
+
+      btnCertDetails.disabled = disableBackupOrDelete;
+      btnCertDetails.style.opacity = disableBackupOrDelete ? "0.5" : "1";
+      btnCertDetails.style.cursor = disableBackupOrDelete ? "not-allowed" : "pointer";
+
+      btnCreateReplaceCerts.disabled = isCertsActionRunning;
+      btnCreateReplaceCerts.style.opacity = isCertsActionRunning ? "0.5" : "1";
+      btnCreateReplaceCerts.style.cursor = isCertsActionRunning ? "not-allowed" : "pointer";
+    }
+
+    async function refreshCertsStatus() {
+      try {
+        const res = await fetch("/api/certs/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          areCertsPresent = Boolean(data.present);
+          isBackupPresent = Boolean(data.backupPresent);
+        }
+      } catch (_) {}
+      updateCertsUI();
+    }
+
+    function openCertsConfirmDialog(title, message, onConfirm) {
+      certsConfirmTitle.textContent = title;
+      certsConfirmMessage.textContent = message;
+      pendingCertsConfirmAction = onConfirm;
+      certsConfirmModal.classList.remove("hidden");
+    }
+
+    function closeCertsConfirmDialog() {
+      certsConfirmModal.classList.add("hidden");
+      pendingCertsConfirmAction = null;
+    }
+
+    btnCloseCertsConfirm.addEventListener("click", closeCertsConfirmDialog);
+    btnCancelCertsConfirm.addEventListener("click", closeCertsConfirmDialog);
+    btnProceedCertsConfirm.addEventListener("click", async () => {
+      const fn = pendingCertsConfirmAction;
+      closeCertsConfirmDialog();
+      if (typeof fn === "function") {
+        await fn();
+      }
+    });
+
+    btnBackupCerts.addEventListener("click", async () => {
+      if (!areCertsPresent || isCertsActionRunning) return;
+      isCertsActionRunning = true;
+      btnBackupCerts.textContent = "Backing up…";
+      updateCertsUI();
+      try {
+        const res = await fetch("/api/certs/backup", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to backup certificates");
+        }
+        areCertsPresent = Boolean(data.present);
+        isBackupPresent = Boolean(data.backupPresent);
+        showToast(`Certificates backed up to ${data.backupDir}`);
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnBackupCerts.textContent = "📦 Backup";
+        isCertsActionRunning = false;
+        updateCertsUI();
+      }
+    });
+
+    async function executeRestoreCerts() {
+      if (isCertsActionRunning) return;
+      isCertsActionRunning = true;
+      btnRestoreCerts.textContent = "Restoring…";
+      updateCertsUI();
+      try {
+        const res = await fetch("/api/certs/restore", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to restore certificates");
+        }
+        areCertsPresent = Boolean(data.present);
+        isBackupPresent = Boolean(data.backupPresent);
+        showToast(`Certificates restored from ${data.restoredFrom || "SHARED/backup"}`);
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnRestoreCerts.textContent = "♻️ Restore";
+        isCertsActionRunning = false;
+        updateCertsUI();
+      }
+    }
+
+    btnRestoreCerts.addEventListener("click", () => {
+      if (!isBackupPresent || isCertsActionRunning) return;
+      openCertsConfirmDialog(
+        "Restore Certificates from Backup",
+        "Are you sure you want to restore certificates from backup? Any existing ca.crt, broker.crt, and broker.key in SHARED/ will be deleted and overwritten with the backup.",
+        executeRestoreCerts
+      );
+    });
+
+    async function executeDeleteCerts() {
+      if (isCertsActionRunning) return;
+      isCertsActionRunning = true;
+      btnDeleteCerts.textContent = "Deleting…";
+      updateCertsUI();
+      try {
+        const res = await fetch("/api/certs/delete", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to delete certificates");
+        }
+        areCertsPresent = Boolean(data.present);
+        showToast("Certificates deleted from SHARED/");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnDeleteCerts.textContent = "🗑 Delete";
+        isCertsActionRunning = false;
+        updateCertsUI();
+      }
+    }
+
+    async function executeCreateOrReplaceCerts() {
+      if (isCertsActionRunning) return;
+      isCertsActionRunning = true;
+      btnCreateReplaceCerts.textContent = "Generating…";
+      updateCertsUI();
+      try {
+        const commonName = inpMqttIp && inpMqttIp.value.trim() ? inpMqttIp.value.trim() : "";
+        const res = await fetch("/api/certs/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ commonName })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to create certificates");
+        }
+        areCertsPresent = Boolean(data.present);
+        showToast("Certificates created in SHARED/");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btnCreateReplaceCerts.textContent = "🔄 Create / Replace";
+        isCertsActionRunning = false;
+        updateCertsUI();
+      }
+    }
+
+    btnDeleteCerts.addEventListener("click", () => {
+      if (!areCertsPresent || isCertsActionRunning) return;
+      openCertsConfirmDialog(
+        "Delete Certificates",
+        "Are you sure you want to delete ca.crt, broker.crt, and broker.key from SHARED/? This action cannot be undone.",
+        executeDeleteCerts
+      );
+    });
+
+    btnCreateReplaceCerts.addEventListener("click", () => {
+      if (isCertsActionRunning) return;
+      if (areCertsPresent) {
+        openCertsConfirmDialog(
+          "Replace Existing Certificates",
+          "Certificates already exist in SHARED/. Are you sure you want to delete the current certificates and generate new ones?",
+          executeCreateOrReplaceCerts
+        );
+      } else {
+        executeCreateOrReplaceCerts();
+      }
+    });
+
+    async function copyCertValue(text, label, btn) {
+      if (!text) return;
+      let copied = false;
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        } catch (_) {}
+      }
+      if (!copied) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          copied = document.execCommand("copy");
+        } catch (_) {}
+        document.body.removeChild(ta);
+      }
+      if (copied) {
+        showToast(`Copied ${label}`);
+        if (btn) {
+          const orig = btn.textContent;
+          btn.textContent = "✓ Copied";
+          setTimeout(() => { btn.textContent = orig; }, 1400);
+        }
+      } else {
+        showToast("Failed to copy to clipboard");
+      }
+    }
+
+    function createCertDetailRow(label, value, highlight) {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:" + (highlight ? "rgba(47, 129, 247, 0.08)" : "var(--bg-app)") + ";";
+
+      const left = document.createElement("div");
+      left.style.cssText = "display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;";
+
+      const lbl = document.createElement("span");
+      lbl.textContent = label;
+      lbl.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:" + (highlight ? "var(--primary)" : "var(--text-muted)") + ";";
+
+      const val = document.createElement("code");
+      val.textContent = value || "—";
+      val.style.cssText = "font-family:var(--font-mono);font-size:12px;color:var(--text-main);word-break:break-all;user-select:all;";
+
+      left.appendChild(lbl);
+      left.appendChild(val);
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "btn btn-secondary btn-sm";
+      copyBtn.textContent = "📋 Copy";
+      copyBtn.style.cssText = "flex-shrink:0;white-space:nowrap;";
+      if (!value) {
+        copyBtn.disabled = true;
+        copyBtn.style.opacity = "0.4";
+      } else {
+        copyBtn.addEventListener("click", () => copyCertValue(value, label, copyBtn));
+      }
+
+      row.appendChild(left);
+      row.appendChild(copyBtn);
+      return row;
+    }
+
+    function renderCertDetailsSection(cert) {
+      const card = document.createElement("div");
+      card.style.cssText = "border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--bg-panel);display:flex;flex-direction:column;gap:8px;";
+
+      const header = document.createElement("div");
+      header.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;border-bottom:1px dashed var(--border);flex-wrap:wrap;";
+
+      const titleWrap = document.createElement("div");
+      titleWrap.style.cssText = "display:flex;align-items:center;gap:8px;";
+      const title = document.createElement("strong");
+      title.textContent = cert.label || cert.fileName;
+      title.style.cssText = "font-size:13.5px;color:var(--text-main);";
+      const fileBadge = document.createElement("code");
+      fileBadge.textContent = cert.fileName;
+      fileBadge.style.cssText = "font-size:11px;color:var(--text-muted);";
+      titleWrap.appendChild(title);
+      titleWrap.appendChild(fileBadge);
+      header.appendChild(titleWrap);
+
+      if (cert.error) {
+        card.appendChild(header);
+        const errP = document.createElement("p");
+        errP.textContent = cert.error;
+        errP.style.cssText = "font-size:12px;color:var(--danger);margin:0;";
+        card.appendChild(errP);
+        return card;
+      }
+
+      const fields = [
+        { label: "SHA-1 Fingerprint", value: cert.sha1Fingerprint, highlight: true },
+        { label: "SHA-256 Fingerprint", value: cert.sha256Fingerprint, highlight: false },
+        { label: "Subject", value: cert.subject, highlight: false },
+        { label: "Issuer", value: cert.issuer, highlight: false },
+        { label: "Serial Number", value: cert.serialNumber, highlight: false },
+        { label: "Validity Status", value: cert.validityStatus, highlight: false },
+        { label: "Valid From", value: cert.validFrom, highlight: false },
+        { label: "Valid Until", value: cert.validUntil, highlight: false },
+        { label: "Signature Algorithm", value: cert.signatureAlgorithm, highlight: false },
+        { label: "Public Key", value: cert.publicKey, highlight: false },
+        { label: "Version", value: cert.version, highlight: false }
+      ];
+      if (Array.isArray(cert.subjectAltNames) && cert.subjectAltNames.length > 0) {
+        fields.push({ label: "Subject Alt Names", value: cert.subjectAltNames.join(", "), highlight: false });
+      }
+
+      const copyAllBtn = document.createElement("button");
+      copyAllBtn.type = "button";
+      copyAllBtn.className = "btn btn-secondary btn-sm";
+      copyAllBtn.textContent = "📋 Copy All";
+      copyAllBtn.addEventListener("click", () => {
+        const allText = `${cert.label} (${cert.fileName})\n` + fields.map(f => `${f.label}: ${f.value || ""}`).join("\n");
+        copyCertValue(allText, `${cert.fileName} details`, copyAllBtn);
+      });
+      header.appendChild(copyAllBtn);
+      card.appendChild(header);
+
+      for (const f of fields) {
+        card.appendChild(createCertDetailRow(f.label, f.value, f.highlight));
+      }
+      return card;
+    }
+
+    function closeCertsDetailsDialog() {
+      certsDetailsModal.classList.add("hidden");
+    }
+
+    btnCloseCertsDetails.addEventListener("click", closeCertsDetailsDialog);
+    btnFooterCloseCertsDetails.addEventListener("click", closeCertsDetailsDialog);
+    certsDetailsModal.addEventListener("click", (e) => {
+      if (e.target === certsDetailsModal) closeCertsDetailsDialog();
+    });
+
+    btnCertDetails.addEventListener("click", async () => {
+      if (!areCertsPresent || isCertsActionRunning) return;
+      certsDetailsBody.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin:0;">Loading certificate details…</p>';
+      certsDetailsModal.classList.remove("hidden");
+      try {
+        const res = await fetch("/api/certs/details", { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to load certificate details");
+        }
+        certsDetailsBody.innerHTML = "";
+        const certs = Array.isArray(data.certificates) ? data.certificates : [];
+        if (certs.length === 0) {
+          certsDetailsBody.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin:0;">No certificates found.</p>';
+          return;
+        }
+        for (const cert of certs) {
+          certsDetailsBody.appendChild(renderCertDetailsSection(cert));
+        }
+      } catch (err) {
+        certsDetailsBody.innerHTML = "";
+        const errP = document.createElement("p");
+        errP.textContent = err.message;
+        errP.style.cssText = "font-size:12.5px;color:var(--danger);margin:0;";
+        certsDetailsBody.appendChild(errP);
+      }
+    });
+
+    refreshCertsStatus();
+    setInterval(refreshCertsStatus, 3000);
+
+    // --- Upload & Download (Certificates/Keys & Scripts) ---
+    async function uploadFilesToEndpoint(fileInput, endpoint, onSuccess) {
+      const files = fileInput.files;
+      if (!files || files.length === 0) return;
+      const formData = new FormData();
+      for (const f of files) {
+        formData.append("files", f);
+      }
+      try {
+        const res = await fetch(endpoint, { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Upload failed");
+        }
+        const names = Array.isArray(data.files) ? data.files.join(", ") : "";
+        showToast(`Uploaded: ${names}`);
+        if (typeof onSuccess === "function") await onSuccess();
+      } catch (err) {
+        showToast(err.message || "Upload failed");
+      } finally {
+        fileInput.value = "";
+      }
+    }
+
+    async function downloadFromEndpoint(endpoint, fallbackFileName, emptyMessage) {
+      try {
+        const res = await fetch(endpoint, { cache: "no-store" });
+        if (res.status === 404) {
+          showToast(emptyMessage);
+          return;
+        }
+        if (!res.ok) {
+          throw new Error("Download failed");
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fallbackFileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        showToast(err.message || "Download failed");
+      }
+    }
+
+    const btnUploadCerts = document.getElementById("btnUploadCerts");
+    const fileUploadCerts = document.getElementById("fileUploadCerts");
+    const btnDownloadCerts = document.getElementById("btnDownloadCerts");
+
+    if (btnUploadCerts && fileUploadCerts) {
+      btnUploadCerts.addEventListener("click", () => fileUploadCerts.click());
+      fileUploadCerts.addEventListener("change", () =>
+        uploadFilesToEndpoint(fileUploadCerts, "/api/files/certs/upload", refreshCertsStatus)
+      );
+    }
+    if (btnDownloadCerts) {
+      btnDownloadCerts.addEventListener("click", () =>
+        downloadFromEndpoint("/api/files/certs/download-all", "forge-node-certs.zip", "No certificates or keys found in SHARED/")
+      );
+    }
+
+    // --- Full Forge Node Instance Configuration Save ---
+    const btnSaveFullConfig = document.getElementById("btnSaveFullConfig");
+    const fullConfigStatusPill = document.getElementById("fullConfigStatusPill");
+    const fullConfigStatusDot = document.getElementById("fullConfigStatusDot");
+    const fullConfigStatusLabel = document.getElementById("fullConfigStatusLabel");
+
+    async function refreshFullConfigStatus() {
+      if (!btnSaveFullConfig) return;
+      try {
+        const res = await fetch("/api/instance/full-config", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.exists) {
+          if (fullConfigStatusDot) fullConfigStatusDot.classList.add("running");
+          if (fullConfigStatusLabel) {
+            fullConfigStatusLabel.textContent = "Default configuration is present";
+            fullConfigStatusLabel.style.color = "var(--success)";
+          }
+          if (fullConfigStatusPill) {
+            fullConfigStatusPill.title = `Saved: ${data.savedAt || "present"} (${data.path}) | FN_RUN_ON_PRECONFIGURED=${Boolean(data.runOnPreconfigured)}`;
+          }
+          if (data.savedAt) {
+            btnSaveFullConfig.title = `Last saved: ${data.savedAt} (${data.path}) | FN_RUN_ON_PRECONFIGURED=${Boolean(data.runOnPreconfigured)}`;
+          }
+        } else {
+          if (fullConfigStatusDot) fullConfigStatusDot.classList.remove("running");
+          if (fullConfigStatusLabel) {
+            fullConfigStatusLabel.textContent = "No default configuration";
+            fullConfigStatusLabel.style.color = "var(--text-muted)";
+          }
+        }
+        if (!isBridgeRunning && data.bridgePort && inpBridgePort && document.activeElement !== inpBridgePort) {
+          inpBridgePort.value = String(data.bridgePort);
+        }
+      } catch (_) {}
+    }
+
+    if (btnSaveFullConfig) {
+      btnSaveFullConfig.addEventListener("click", async () => {
+        btnSaveFullConfig.disabled = true;
+        const origHtml = btnSaveFullConfig.innerHTML;
+        btnSaveFullConfig.textContent = "Saving…";
+        try {
+          const bridgePortVal = parseInt(inpBridgePort.value, 10) || activeBridgePort || 8765;
+          const auPortVal = parseInt(inpAuPort.value, 10) || activeAuPort || 10010;
+          const res = await fetch("/api/instance/full-config/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bridgePort: bridgePortVal,
+              auPort: auPortVal,
+              remoteAau: chkRemoteAau.checked,
+              exposeAu: chkExposeAu.checked,
+              remoteMqtt: chkRemoteMqtt.checked
+            })
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Failed to save Forge Node instance configuration");
+          }
+          showToast(`Saved full Forge Node instance configuration to ${data.path}`);
+          await refreshFullConfigStatus();
+        } catch (err) {
+          showToast(err.message || "Failed to save Forge Node instance configuration");
+        } finally {
+          btnSaveFullConfig.disabled = false;
+          btnSaveFullConfig.innerHTML = origHtml;
+        }
+      });
+      refreshFullConfigStatus();
+    }
+
+    // --- Appearance Selectors (Color Palette, UI Style, Icon Pack) ---
+    const selColorTheme = document.getElementById("selColorTheme");
+    const selUiStyle = document.getElementById("selUiStyle");
+    const selIconPack = document.getElementById("selIconPack");
+    if (window.ForgeNodeTheme) {
+      const populateSelect = (sel, mapObj, currentVal) => {
+        if (!sel || !mapObj) return;
+        sel.innerHTML = "";
+        for (const [id, entry] of Object.entries(mapObj)) {
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.textContent = entry.label || id;
+          sel.appendChild(opt);
+        }
+        if (currentVal && mapObj[currentVal]) {
+          sel.value = currentVal;
+        }
+      };
+
+      const state = window.ForgeNodeTheme.getState ? window.ForgeNodeTheme.getState() : {};
+      populateSelect(selColorTheme, window.ForgeNodeTheme.THEMES, state.colorTheme || "github-dark");
+      populateSelect(selUiStyle, window.ForgeNodeTheme.UI_STYLES, state.uiStyle || "forge-classic");
+      populateSelect(selIconPack, window.ForgeNodeTheme.ICON_PACKS, state.iconPack || "emoji");
+
+      if (selColorTheme) {
+        selColorTheme.addEventListener("change", async () => {
+          const chosen = selColorTheme.value;
+          await window.ForgeNodeTheme.setAndPersistTheme(chosen);
+          const label = window.ForgeNodeTheme.THEMES[chosen] ? window.ForgeNodeTheme.THEMES[chosen].label : chosen;
+          showToast(`Palette changed to ${label} (saved to AAU/script/themes/theme-config.conf)`);
+        });
+      }
+      if (selUiStyle) {
+        selUiStyle.addEventListener("change", async () => {
+          const chosen = selUiStyle.value;
+          await window.ForgeNodeTheme.setAndPersistUiStyle(chosen);
+          const label = window.ForgeNodeTheme.UI_STYLES[chosen] ? window.ForgeNodeTheme.UI_STYLES[chosen].label : chosen;
+          showToast(`UI Style changed to ${label} (saved to AAU/script/themes/theme-config.conf)`);
+        });
+      }
+      if (selIconPack) {
+        selIconPack.addEventListener("change", async () => {
+          const chosen = selIconPack.value;
+          await window.ForgeNodeTheme.setAndPersistIconPack(chosen);
+          const label = window.ForgeNodeTheme.ICON_PACKS[chosen] ? window.ForgeNodeTheme.ICON_PACKS[chosen].label : chosen;
+          showToast(`Icon Pack changed to ${label} (saved to AAU/script/themes/theme-config.conf)`);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

@@ -324,15 +324,18 @@ class nodeFactory:
                     conf = float(__tokens[4])    
 
                 if __tokens[0] == "Ci":
+                    forceStr = "" if force is None else str(force).replace("\"", "").strip()
+                    if forceStr.lower() == "null":
+                        forceStr = ""
                     if __tokens[2]== "C":
-                        if force == 1 and conf == 1:
+                        if forceStr != "" and str(conf) == forceStr:
                             valid = True
-                        elif force == 0 and value == conf:
+                        elif forceStr == "" and str(value) == str(conf):
                             valid = True
                     elif __tokens[2] == "T":
-                        if str(force) != "" and str(conf) == str(force):
+                        if forceStr != "" and str(conf) == forceStr:
                             valid = True
-                        elif str(force) == "" and str(value) == str(conf):
+                        elif forceStr == "" and str(value) == str(conf):
                             valid = True
                 elif __tokens[0] == "Cr":
                     previous = n.getVariableValueByName(varName)

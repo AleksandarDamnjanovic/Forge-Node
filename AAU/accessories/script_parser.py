@@ -72,7 +72,7 @@ def parseNodes(factory, __nodes, __globalVars):
                                 else:
                                     masterOf.append(int(t))
 
-        except e as Exception:
+        except Exception as e:
             logit("Script parsing error!!! Headers or meta, not formed properly!!!", 1)
             logit("AAU terminated!!!", 1)
             quit()
@@ -94,7 +94,7 @@ def parseNodes(factory, __nodes, __globalVars):
             e = str(unit).index("</programs>")
             prog = unit[b+11:e]
             prog = factory.clean(prog)
-        except e as Exception:
+        except Exception as e:
             logit(f"Script parsing error!!! Variables, sensors, elements or programs not splited properly in node {unitIndex}!!!", 1)
             logit("AAU terminated!!!", 1)
             quit()
@@ -118,7 +118,7 @@ def parseNodes(factory, __nodes, __globalVars):
                     gvar= globalVariable(type, name, value, unitIndex)
                     __globalVars.append(gvar)
                 vars.append(var_)
-            except e as Exception:
+            except Exception as e:
                 logit(f"Variable parsing error in node {unitIndex}!!!", 1)
                 logit("AAU terminated!!!", 1)
                 quit()
@@ -127,7 +127,7 @@ def parseNodes(factory, __nodes, __globalVars):
 
             try:
                 sens.append(parseSensor(sen))
-            except e as Exception:
+            except Exception as e:
                 logit(f"Sensor parsing error in node {unitIndex}!!!", 1)
                 logit("AAU terminated!!!", 1)
                 quit()
@@ -141,7 +141,7 @@ def parseNodes(factory, __nodes, __globalVars):
                     elTrigger.append(parseTriggerOrSwitch(el, type = 0))
                 elif el.startswith("switch"):
                     elSwitch.append(parseTriggerOrSwitch(el, type = 1))
-            except e as Exception:
+            except Exception as e:
                 logit(f"List, trigger or switch parsing error in node {unitIndex}!!!", 1)
                 logit("AAU terminated!!!", 1)
                 quit()
@@ -170,7 +170,7 @@ def parseNodes(factory, __nodes, __globalVars):
                     serials.append(a)
                 elif p.__contains__("timeLim"):
                     timeLims.append(parseTimeLims(p))
-        except e as Exception:
+        except Exception as e:
             logit(f"Program parsing error in node {unitIndex}!!!", 1)
             logit("AAU terminated!!!", 1)
             quit()
@@ -203,7 +203,7 @@ def parseVariables(line):
     varName= tokens[1 + offset]
 
     if varType != "array" and varType!= "global array":
-        varVal= tokens[2 + offset]
+        varVal= tokens[2 + offset] if len(tokens) > (2 + offset) else ""
     else:
         ind1 = line.index("[")
         ind2 = line.index("]")
@@ -212,6 +212,8 @@ def parseVariables(line):
     if varType=="string" or varType=="global string":
         if varVal.__contains__("\""):
             varVal= varVal.replace("\"","")
+        if varVal.lower() == "null":
+            varVal = ""
     
     return varType, varName, varVal 
 

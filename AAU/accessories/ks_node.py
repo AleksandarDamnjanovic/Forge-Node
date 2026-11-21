@@ -299,9 +299,10 @@ class node:
     def processSwitches(self):
         for s in self.getElementSwitches():
             val = self.getVariableValueByName(s.getValue())
-            force = self.getVariableValueByName(s.getForce())
-            v= None
-            if force == 1:
+            rawForce = self.getVariableValueByName(s.getForce())
+            force = "" if rawForce is None else str(rawForce).replace("\"", "").strip()
+            v = None
+            if force != "" and force.lower() != "null":
                 v = force
             else:
                 v = val
@@ -312,9 +313,10 @@ class node:
     def processTriggers(self):
         for s in self.getElementTriggers():
             val = str(self.getVariableValueByName(s.getValue())).replace("\"", "")
-            force = str(self.getVariableValueByName(s.getForce())).replace("\"", "")
+            rawForce = self.getVariableValueByName(s.getForce())
+            force = "" if rawForce is None else str(rawForce).replace("\"", "").strip()
             v= None
-            if force != "":
+            if force != "" and force.lower() != "null":
                 v = force
             else:
                 v = val
@@ -325,10 +327,11 @@ class node:
     def processLists(self):
         for s in self.getElementLists():
             val = self.getVariableValueByName(s.getState())
-            force = str(self.getVariableValueByName(s.getForce())).replace("\"", "")
+            rawForce = self.getVariableValueByName(s.getForce())
+            force = "" if rawForce is None else str(rawForce).replace("\"", "").strip()
             elements = self.getVariableValueByName(s.getListValues())
             v= None
-            if force != "":
+            if force != "" and force.lower() != "null":
                 v = int(force)
             else:
                 v = val

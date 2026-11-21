@@ -1,10 +1,11 @@
 import socket
 import sys
 
-HOST = "127.0.0.1"
-PORT = int(sys.argv[1])
+HOST = sys.argv[1]
+PORT = int(sys.argv[2])
 message = ""
 l = len(sys.argv)
+print(l)
 for i in range(2, l):
     if(message==""):
         message = sys.argv[i]

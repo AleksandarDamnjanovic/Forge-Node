@@ -193,8 +193,8 @@ Exampe of entire node:
         global      float       $res02 =            0.0
         global      int         $c1 =               0
         global      int         $c2 =               0
-                    int         $f1 =               0
-                    int         $f2 =               0
+                    string      $f1 =               ""
+                    string      $f2 =               ""
                     string      $t1 =               "3"
                     string      $ft1 =              ""
                     string      $start =            "19:20"
@@ -211,7 +211,7 @@ Exampe of entire node:
                     array       $lv =               [0, 1, 2]
                     array       $ln =               ["off", "cooling", "heating"]
                     int         $l1 =               1
-                    string      $lf1 =              "1"
+                    string      $lf1 =              ""
 
     </variables>
 

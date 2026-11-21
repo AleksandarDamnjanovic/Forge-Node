@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Node — Auxiliary Automation Unit Setup</title>
+  <link rel="icon" type="image/png" href="/Forge Node Studio Icon.png" />
+  <link rel="stylesheet" href="/script-editor/styles.css" />
+  <script src="/theme.js"></script>
+  <style>
+    body {
+      overflow-y: auto;
+      height: auto;
+      min-height: 100vh;
+    }
+    .setup-wrap {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .setup-card {
+      max-width: 820px;
+      width: 100%;
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 700px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .picker-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .req-star {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+    .status-banner {
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .status-banner.error {
+      background: rgba(248, 81, 73, 0.14);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: var(--danger);
+    }
+    .status-banner.success {
+      background: rgba(63, 185, 80, 0.14);
+      border: 1px solid rgba(63, 185, 80, 0.4);
+      color: var(--success);
+    }
+    .file-list {
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-main);
+      text-align: left;
+    }
+    .file-item:hover {
+      border-color: var(--primary);
+      background: var(--bg-hover);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/Forge Node Studio Icon.png" alt="Forge Node" class="brand-logo-img" />
+      <div>
+        <h1 class="brand-title">Auxiliary Automation Unit (AAU)</h1>
+        <span class="brand-subtitle">Configure <code>AAU/configuration.conf</code> (Container files only)</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="/index.html" class="btn btn-secondary" style="text-decoration:none;">
+        ← Main Hub
+      </a>
+      <button type="button" class="btn btn-secondary" onclick="fetch('/api/auth/logout',{method:'POST'}).finally(()=>location.href='/login.html')" title="Sign out">
+        Sign Out
+      </button>
+    </div>
+  </header>
+
+  <main class="setup-wrap">
+    <div class="card setup-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <span class="card-tag">AAU/configuration.conf</span>
+          <span class="card-title">AAU Configuration Form</span>
+        </div>
+        <span class="card-subtitle">All files must exist inside the container (<code>*</code> mandatory)</span>
+      </div>
+
+      <form id="aauConfigForm" class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+        <div id="aauStatusBanner" class="status-banner hidden"></div>
+
+        <div class="form-grid-2">
+          <div class="field-group">
+            <label class="field-label" for="scriptFile"><span>scriptFile<span class="req-star">*</span></span></label>
+            <div class="picker-row">
+              <input type="text" id="scriptFile" class="input input-mono" placeholder="script/script.fn" required />
+              <button type="button" class="btn btn-secondary btn-sm file-pick-btn" data-target="scriptFile" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="backupScriptFile"><span>backupScriptFile</span><span style="font-weight:400;color:var(--text-dim)">(optional)</span></label>
+            <div class="picker-row">
+              <input type="text" id="backupScriptFile" class="input input-mono" placeholder="script/backup-script.fn" />
+              <button type="button" class="btn btn-secondary btn-sm file-pick-btn" data-target="backupScriptFile" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="logFile"><span>logFile<span class="req-star">*</span></span></label>
+            <div class="picker-row">
+              <input type="text" id="logFile" class="input input-mono" placeholder="script/log.txt" required />
+              <button type="button" class="btn btn-secondary btn-sm file-pick-btn" data-target="logFile" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="certificate"><span>certificate (CA)<span class="req-star">*</span></span></label>
+            <div class="picker-row">
+              <input type="text" id="certificate" class="input input-mono" placeholder="certs/ca.crt" required />
+              <button type="button" class="btn btn-secondary btn-sm file-pick-btn" data-target="certificate" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="serverKey"><span>serverKey<span class="req-star">*</span></span></label>
+            <div class="picker-row">
+              <input type="text" id="serverKey" class="input input-mono" placeholder="certs/broker.key" required />
+              <button type="button" class="btn btn-secondary btn-sm file-pick-btn" data-target="serverKey" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="serverCertificate"><span>serverCertificate<span class="req-star">*</span></span></label>
+            <div class="picker-row">
+              <input type="text" id="serverCertificate" class="input input-mono" placeholder="certs/broker.crt" required />
+              <button type="button" class="btn btn-secondary btn-sm file-pick-btn" data-target="serverCertificate" style="white-space:nowrap;">📂 Browse</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="address"><span>MQTT IP Address (address)<span class="req-star">*</span></span></label>
+            <input type="text" id="address" class="input input-mono" placeholder="192.168.0.24" required />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="port"><span>MQTT Server Port (port)<span class="req-star">*</span></span></label>
+            <input type="number" id="port" class="input input-mono" min="1" max="65535" placeholder="8883" required />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="user"><span>MQTT Username (user)<span class="req-star">*</span></span></label>
+            <input type="text" id="user" class="input input-mono" placeholder="admin" required />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="password">
+              <span>MQTT Password (password)<span class="req-star">*</span></span>
+              <button type="button" id="btnTogglePwd" class="btn btn-xs btn-secondary" style="padding:1px 6px;">Show</button>
+            </label>
+            <input type="password" id="password" class="input input-mono" placeholder="00004444" required />
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed var(--border);">
+          <label class="checkbox-label" style="font-size:12px;">
+            <input type="checkbox" id="chkSetAauDefault" />
+            <span>Set as default (<code>AAU/script/localAAUconfigurations/default-configuration</code>)</span>
+          </label>
+          <span id="defaultAauConfigHint" style="font-size:11px;color:var(--text-muted);">No default saved</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" id="btnSyncLocalMqtt">
+              🔄 Sync from Local MQTT
+            </button>
+            <button type="button" class="btn btn-secondary" id="btnLoadAauConfig">
+              🗄 Load Configuration
+            </button>
+            <button type="button" class="btn btn-secondary" id="btnSaveAauConfig">
+              💾 Save Configuration
+            </button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="/index.html" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
+            <button type="submit" class="btn btn-primary" id="btnApplyAauConfig">
+              ✓ Apply to AAU/configuration.conf
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Container File Picker Modal -->
+  <div class="modal-backdrop hidden" id="filePickerModal">
+    <div class="modal" style="width:580px;max-width:94vw;">
+      <div class="modal-header">
+        <h3>Select File Inside Container</h3>
+        <button type="button" class="btn-icon" id="btnCloseFilePicker">✕</button>
+      </div>
+      <div class="modal-body">
+        <span style="font-size:11.5px;color:var(--text-muted);">
+          Showing files inside container (<code id="containerRootLabel">/home/FORGE-NODE</code> — <code>AAU/script</code>, <code>AAU/certs</code>, <code>SHARED</code>):
+        </span>
+        <div class="file-list" id="volumeFileList"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btnCancelFilePicker">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save AAU Configuration Modal -->
+  <div class="modal-backdrop hidden" id="saveAauConfigModal">
+    <div class="modal" style="width:460px;max-width:94vw;">
+      <div class="modal-header">
+        <h3>💾 Save AAU Configuration</h3>
+        <button type="button" class="btn-icon" id="btnCloseSaveAauConfig">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="field-group">
+          <label class="field-label">
+            <span>Configuration Name (saved in <code>AAU/script/localAAUconfigurations/</code>)</span>
+          </label>
+          <input type="text" id="inpSaveAauConfigName" class="input input-mono" placeholder="local-aau.conf" />
+        </div>
+        <label class="checkbox-label" style="font-size:12px;">
+          <input type="checkbox" id="chkSaveAauModalDefault" />
+          <span>Set as default (<code>default-configuration</code>)</span>
+        </label>
+        <div class="field-group">
+          <span style="font-size:11.5px;color:var(--text-muted);">Existing configurations (click to overwrite):</span>
+          <div id="saveAauExistingList" style="max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-top:4px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelSaveAauConfig">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmSaveAauConfig">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load AAU Configuration Modal -->
+  <div class="modal-backdrop hidden" id="loadAauConfigModal">
+    <div class="modal" style="width:480px;max-width:94vw;">
+      <div class="modal-header">
+        <h3>🗄 Load AAU Configuration</h3>
+        <button type="button" class="btn-icon" id="btnCloseLoadAauConfig">✕</button>
+      </div>
+      <div class="modal-body">
+        <span style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:8px;">
+          Saved in <code>AAU/script/localAAUconfigurations/</code>:
+        </span>
+        <div class="file-list" id="loadAauConfigList"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelLoadAauConfig">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const FIELDS = [
+      "scriptFile",
+      "backupScriptFile",
+      "logFile",
+      "certificate",
+      "serverKey",
+      "serverCertificate",
+      "address",
+      "port",
+      "user",
+      "password"
+    ];
+
+    const elBanner = document.getElementById("aauStatusBanner");
+    const elForm = document.getElementById("aauConfigForm");
+    const elBtnApply = document.getElementById("btnApplyAauConfig");
+    const elPickerModal = document.getElementById("filePickerModal");
+    const elVolumeFileList = document.getElementById("volumeFileList");
+    let activePickerTargetId = null;
+
+    function showToast(msg) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 2800);
+    }
+
+    function showBanner(type, text) {
+      elBanner.className = "status-banner " + type;
+      elBanner.textContent = text;
+    }
+
+    document.getElementById("btnTogglePwd").addEventListener("click", (e) => {
+      const inp = document.getElementById("password");
+      if (inp.type === "password") {
+        inp.type = "text";
+        e.target.textContent = "Hide";
+      } else {
+        inp.type = "password";
+        e.target.textContent = "Show";
+      }
+    });
+
+    function closePickerModal() {
+      elPickerModal.classList.add("hidden");
+      activePickerTargetId = null;
+    }
+
+    document.getElementById("btnCloseFilePicker").addEventListener("click", closePickerModal);
+    document.getElementById("btnCancelFilePicker").addEventListener("click", closePickerModal);
+
+    document.querySelectorAll(".file-pick-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        activePickerTargetId = btn.dataset.target;
+        elVolumeFileList.innerHTML = `<div class="empty-state">Loading files…</div>`;
+        elPickerModal.classList.remove("hidden");
+        try {
+          const res = await fetch("/api/aau/files", { cache: "no-store" });
+          const data = await res.json();
+          const containerRootEl = document.getElementById("containerRootLabel");
+          if (containerRootEl && data.containerRoot) {
+            containerRootEl.textContent = data.containerRoot;
+          }
+          const files = data.files || [];
+          if (files.length === 0) {
+            elVolumeFileList.innerHTML = `<div class="empty-state">No files found inside container directories (AAU/script, AAU/certs, SHARED).</div>`;
+            return;
+          }
+          elVolumeFileList.innerHTML = "";
+          for (const f of files) {
+            const chosenPath = f.absolutePath || f.relativePath;
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = "file-item";
+            item.innerHTML = `<span style="word-break:break-all;">${chosenPath}</span><span class="subcard-badge badge-valCondition">${f.group}</span>`;
+            item.addEventListener("click", () => {
+              if (activePickerTargetId) {
+                document.getElementById(activePickerTargetId).value = chosenPath;
+              }
+              closePickerModal();
+            });
+            elVolumeFileList.appendChild(item);
+          }
+        } catch (err) {
+          elVolumeFileList.innerHTML = `<div class="empty-state">Failed to load files: ${err.message}</div>`;
+        }
+      });
+    });
+
+    function applyConfigToForm(cfg) {
+      for (const key of FIELDS) {
+        const el = document.getElementById(key);
+        if (el && cfg[key] !== undefined && cfg[key] !== null) {
+          el.value = cfg[key];
+        }
+      }
+    }
+
+    function updateDefaultHint(defName) {
+      const hint = document.getElementById("defaultAauConfigHint");
+      if (hint) {
+        hint.textContent = defName ? `Default: ${defName}` : "No default saved";
+      }
+    }
+
+    function collectFormPayload() {
+      const payload = {};
+      for (const key of FIELDS) {
+        const val = document.getElementById(key).value;
+        payload[key] = key === "port" ? Number(val) : (key === "password" ? val : val.trim());
+      }
+      return payload;
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch("/api/aau/config", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load AAU configuration");
+        const data = await res.json();
+        applyConfigToForm(data.config || {});
+        updateDefaultHint(data.defaultConfig || "");
+        if (data.remoteAau === false && data.localMqttConfigFound) {
+          showBanner("success", "Loaded Local AAU configuration (logFile: script/log.txt; backupScriptFile optional).");
+        }
+      } catch (err) {
+        showBanner("error", err.message);
+      }
+    }
+
+    const saveAauModal = document.getElementById("saveAauConfigModal");
+    const inpSaveAauName = document.getElementById("inpSaveAauConfigName");
+    const chkSetAauDefault = document.getElementById("chkSetAauDefault");
+    const chkSaveAauModalDefault = document.getElementById("chkSaveAauModalDefault");
+    const saveAauExistingList = document.getElementById("saveAauExistingList");
+    const loadAauModal = document.getElementById("loadAauConfigModal");
+    const loadAauConfigList = document.getElementById("loadAauConfigList");
+
+    const closeSaveAauModal = () => saveAauModal.classList.add("hidden");
+    const closeLoadAauModal = () => loadAauModal.classList.add("hidden");
+
+    document.getElementById("btnCloseSaveAauConfig").addEventListener("click", closeSaveAauModal);
+    document.getElementById("btnCancelSaveAauConfig").addEventListener("click", closeSaveAauModal);
+    document.getElementById("btnCloseLoadAauConfig").addEventListener("click", closeLoadAauModal);
+    document.getElementById("btnCancelLoadAauConfig").addEventListener("click", closeLoadAauModal);
+
+    async function fetchSavedAauConfigs() {
+      const res = await fetch("/api/aau/configs/list", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to list AAU configurations");
+      return await res.json();
+    }
+
+    document.getElementById("btnSaveAauConfig").addEventListener("click", async () => {
+      chkSaveAauModalDefault.checked = chkSetAauDefault.checked;
+      if (!inpSaveAauName.value.trim()) {
+        inpSaveAauName.value = "local-aau.conf";
+      }
+      saveAauModal.classList.remove("hidden");
+      inpSaveAauName.focus();
+      inpSaveAauName.select();
+
+      saveAauExistingList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Loading…</div>';
+      try {
+        const data = await fetchSavedAauConfigs();
+        updateDefaultHint(data.defaultConfig || "");
+        const files = Array.isArray(data.files) ? data.files : [];
+        saveAauExistingList.innerHTML = "";
+        if (!files.length) {
+          saveAauExistingList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No saved AAU configurations yet.</div>';
+          return;
+        }
+        for (const f of files) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn btn-secondary btn-sm";
+          btn.textContent = f.isDefault ? `${f.name} (default)` : f.name;
+          btn.style.cssText = "justify-content:flex-start;font-family:var(--font-mono);text-align:left;";
+          btn.addEventListener("click", () => {
+            inpSaveAauName.value = f.name;
+          });
+          saveAauExistingList.appendChild(btn);
+        }
+      } catch (err) {
+        saveAauExistingList.innerHTML = `<div style="font-size:12px;color:var(--danger);">${err.message}</div>`;
+      }
+    });
+
+    document.getElementById("btnConfirmSaveAauConfig").addEventListener("click", async () => {
+      elBanner.classList.add("hidden");
+      let fileName = inpSaveAauName.value.trim();
+      if (!fileName) {
+        showToast("Configuration name cannot be empty");
+        return;
+      }
+      if (!fileName.toLowerCase().endsWith(".conf")) {
+        fileName += ".conf";
+      }
+      const setAsDefault = chkSaveAauModalDefault.checked;
+      chkSetAauDefault.checked = setAsDefault;
+
+      const payload = collectFormPayload();
+      payload.fileName = fileName;
+      payload.setAsDefault = setAsDefault;
+
+      try {
+        const res = await fetch("/api/aau/configs/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to save AAU configuration");
+        }
+        closeSaveAauModal();
+        updateDefaultHint(data.defaultConfig || "");
+        showBanner(
+          "success",
+          setAsDefault
+            ? `Saved ${data.fileName} to AAU/script/localAAUconfigurations/ and set as default.`
+            : `Saved ${data.fileName} to AAU/script/localAAUconfigurations/.`
+        );
+        showToast(setAsDefault ? `Saved ${data.fileName} (set as default)` : `Saved ${data.fileName}`);
+      } catch (err) {
+        showBanner("error", err.message);
+        showToast(err.message);
+      }
+    });
+
+    document.getElementById("btnLoadAauConfig").addEventListener("click", async () => {
+      loadAauModal.classList.remove("hidden");
+      loadAauConfigList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Loading…</div>';
+      try {
+        const data = await fetchSavedAauConfigs();
+        updateDefaultHint(data.defaultConfig || "");
+        const files = Array.isArray(data.files) ? data.files : [];
+        loadAauConfigList.innerHTML = "";
+        if (!files.length) {
+          loadAauConfigList.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No saved configurations in AAU/script/localAAUconfigurations/.</div>';
+          return;
+        }
+        for (const f of files) {
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className = "file-item";
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = f.name;
+          item.appendChild(nameSpan);
+          if (f.isDefault) {
+            const badge = document.createElement("span");
+            badge.className = "subcard-badge badge-valCondition";
+            badge.textContent = "DEFAULT";
+            item.appendChild(badge);
+          }
+          item.addEventListener("click", async () => {
+            try {
+              const res = await fetch("/api/aau/configs/load", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  fileName: f.name,
+                  setAsDefault: chkSetAauDefault.checked
+                })
+              });
+              const loadData = await res.json();
+              if (!res.ok || !loadData.ok) {
+                throw new Error(loadData.error || "Failed to load configuration");
+              }
+              applyConfigToForm(loadData.config || {});
+              chkSetAauDefault.checked = Boolean(loadData.isDefault);
+              updateDefaultHint(loadData.defaultConfig || "");
+              closeLoadAauModal();
+              showBanner("success", `Loaded ${loadData.fileName} into AAU/configuration.conf`);
+              showToast(`Loaded ${loadData.fileName}`);
+            } catch (err) {
+              showToast(err.message || "Failed to load configuration");
+            }
+          });
+          loadAauConfigList.appendChild(item);
+        }
+      } catch (err) {
+        loadAauConfigList.innerHTML = `<div style="font-size:12px;color:var(--danger);">${err.message}</div>`;
+      }
+    });
+
+    document.getElementById("btnSyncLocalMqtt").addEventListener("click", async () => {
+      elBanner.classList.add("hidden");
+      try {
+        const res = await fetch("/api/aau/sync-local-mqtt", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to sync from Local MQTT configuration");
+        }
+        applyConfigToForm(data.config || {});
+        showBanner("success", "Synced certificates, script, credentials, IP/port, and logFile (script/log.txt) from Local MQTT configuration.");
+        showToast("Synced AAU/configuration.conf from Local MQTT");
+      } catch (err) {
+        showBanner("error", err.message);
+        showToast(err.message);
+      }
+    });
+
+    elForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      elBanner.classList.add("hidden");
+      elBtnApply.disabled = true;
+      elBtnApply.textContent = "Saving…";
+
+      const payload = collectFormPayload();
+
+      try {
+        const res = await fetch("/api/aau/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to save AAU configuration");
+        }
+        showBanner("success", "Saved configuration to AAU/configuration.conf");
+        showToast("Updated AAU/configuration.conf");
+      } catch (err) {
+        showBanner("error", err.message);
+        showToast("Save failed: " + err.message);
+      } finally {
+        elBtnApply.disabled = false;
+        elBtnApply.textContent = "✓ Apply to AAU/configuration.conf";
+      }
+    });
+
+    loadConfig();
+  </script>
+</body>
+</html>

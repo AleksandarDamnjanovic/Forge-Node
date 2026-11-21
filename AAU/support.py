@@ -1,23 +1,66 @@
+import sys
 import time
+from unittest import case
 import support
 import threading
 from accessories.ks_logger import logit
 
+scriptFile = ""
+backupScriptFile = ""
+logFile = ""
+certificate = ""
+serverKey = ""
+serverCertificate = ""
+address = ""
+port = 0
+user = ""
+password = ""
+
 lock = threading.Lock()
 
-scriptFile = "/home/irishpub/Programming/AAU/script/script.fn"
-baskupScriptFile = "/home/irishpub/Programming/AAU/script/backup-script.fn"
-logFile = "/home/irishpub/Programming/AAU/script/log.txt"
-certificate = "/home/irishpub/Programming/AAU/certs/ca.crt"
-serverKey = "/home/irishpub/Programming/AAU/certs/broker.key"
-serverCertificate = "/home/irishpub/Programming/AAU/certs/broker.crt"
+file = open("./configuration.conf", "r")
+configuration = file.read()
+configuration = configuration.split("\n")
+file.close()
 
-address =       "192.168.0.24"
-port =          8883
-user =          "admin" 
-password =      "00004444"
+for i in range(len(configuration)):
+    if(str(configuration[i]).strip() == ""):
+        continue
+    configuration[i] = configuration[i].strip()
+    if "=" not in configuration[i]:
+        continue
+    name, value = configuration[i].split("=", 1)
+    name = name.strip()
+    value = value.strip()
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        value = value[1:-1]
+    match name:
+        case "scriptFile":
+            scriptFile = value
+        case "backupScriptFile":
+            backupScriptFile = value
+        case "logFile":
+            logFile = value
+        case "certificate":
+            certificate = value
+        case "serverKey":
+            serverKey = value
+        case "serverCertificate":
+            serverCertificate = value
+        case "address":
+            address = value
+        case "port":
+            port = int(value)
+        case "user":
+            user = value
+        case "password":
+            password = value
+
+if(scriptFile == "" or logFile == "" or certificate == "" or serverKey == "" or serverCertificate == "" or address == "" or port == 0 or user == "" or password == ""):
+    logit("Configuration file is not valid", 2)
+    sys.exit(1)
+
 START =         False
-
 factory = None
 nodes = None
 

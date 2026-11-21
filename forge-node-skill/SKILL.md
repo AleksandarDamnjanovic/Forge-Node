@@ -19,7 +19,7 @@ Whenever user asks to do something with its home or company automation that is b
 ### General rules
 - Arguments in human readable form or HRF should be used by agent in order to determine property.
 - Programmable variable controls behavior of component, but it should not be updated by agent, except in cases when user ask it explicitly.
-- Force variable is used whenever user ask of agent to change value of the component, this variable should be affected(updated).
+- Force variable is used whenever user ask of agent to change value of the component, this variable should be affected(updated). All force variables (for switches, triggers, and lists) are of type `string` with an initial value of `""` (empty string). While a force variable is `""`, the programmable control variable is not overridden. When a force variable is set to an actual value (e.g. `"1"` or `"0"` for a switch), it overrides the programmable control variable. To reset a force variable back to its original `""` value (releasing the override), pass `null` as the value to `write-variable` (e.g. `write-variable 1 \$f1 null`).
 - Index of component on physical device in not useful to the agent
 - Epoch variable argument. Agent should affect this variable only if user demands it explicitly. In regards of exact component, this variable could mean different things.
   - in case of sensors, this variable holds value in seconds of pause length in between two readings(those readings does not affect agent in any way)
@@ -185,7 +185,7 @@ When is necessary to from one node to affect global variable from another node, 
 When agent has to create variable, this **naming convention** must be followed. Agent will always name its variables as $agent and then first available index like `$agent1`, `$agent2`, `$agent3` and so on, so that name of the variable will always be unique on the node level.
 
 ## How to initialize service
-1. You are going to use `client.py` from Script PATH with python like `python PATH/client.py`. As first argument, you are always going to provide port number 11111. For second argument and on, you are going to use app functions and its arguments; for example, command would look like `python PATH/client.py 11111 read-variables 1`
+1. You are going to use `client.py` from Script PATH with python like `python PATH/client.py`. As first argument, you are always going to provide port number 10015. For second argument and on, you are going to use app functions and its arguments; for example, command would look like `python PATH/client.py 10010 read-variables 1`
 2. get number of nodes from entire system by executing command `read-node-count`. keep in mind that nodes are enumerated from 1 on ...
 3. for every node index execute command `read-header` with node index as argument in order to get header text. Structure of header text is better explained in skill documentation `header.md`. The most important piece of data for the beginning is the first argument of the header function. That piece of data will be called `Location`
 4. memorize all of node names(Locations) and corresponding indexes. those information are necessary for all other processes.
@@ -259,7 +259,7 @@ If user needs some switch to be active longer that others, same principle like i
 
 ## Exact procedure
 In all of cases, always first perform `Query analysis core rules`, and in case of programs `Program handling core rules` must be implemented too.
-1.  In case of **switches** user can say something like `Turn on first light in my living room`, `Switch the first light in livin room` or `Turn livin room light 1 off` or any variation of those. Use command `write-variable` in order to set force variable of desired switch to wished value(0 for off and 1 for on).
+1.  In case of **switches** user can say something like `Turn on first light in my living room`, `Switch the first light in livin room` or `Turn livin room light 1 off` or any variation of those. Use command `write-variable` in order to set force variable of desired switch to wished value(0 for off and 1 for on, or `null` to reset the force variable back to `""` so programmable logic takes over).
 2. In case of sensors, agent must know that direct updating of values of sensors is off limits. In case of **sensors**, user can ask 3 different things.
     - User can ask you do deal with epoch in one of two ways
         - to update epoch value agent should use function `write-variable` with arguments of node index, epoch variable for the exact sensor and new value for this variable that user provided.
