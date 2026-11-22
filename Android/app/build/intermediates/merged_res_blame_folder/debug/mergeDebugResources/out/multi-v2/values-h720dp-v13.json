@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.aleksandar_damnjanovic.forge_node.app-mergeDebugResources-21:/values-h720dp-v13/values-h720dp-v13.xml",
+            "map": [
+                {
+                    "source": "/home/irishpub/.gradle/caches/9.1.0/transforms/73053a49bc0809b035e0865fb6746021/transformed/appcompat-1.7.0/res/values-h720dp-v13/values-h720dp-v13.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "66",
+                        "endOffsets": "117"
+                    }
+                }
+            ]
+        }
+    ]
+}
