@@ -37,8 +37,8 @@ def processAdmin(text):
     try:
         # 📎 reads header data from node by providing index of the node throught the function
         if text.__contains__("readHeader("):
-            ind = re.findall(r"[\\d]+", text)
-            if ind != None:
+            ind = re.findall(r"[0-9]+", text)
+            if ind:
                 ind = int(ind[0])
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = support.factory.readHeader(ind)
@@ -59,8 +59,8 @@ def processAdmin(text):
         
         # 📎 returns entire <sensors> section from the node by providing the node index
         elif text.__contains__("readSensors("):
-            ind = re.findall("[\\d]+", text)
-            if ind != None:
+            ind = re.findall(r"[0-9]+", text)
+            if ind:
                 ind = int(ind[0])
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = support.factory.readSensors(ind)
@@ -70,8 +70,8 @@ def processAdmin(text):
 
         # 📎 returns entire <elements> section from the node by providing the node index
         elif text.__contains__("readElements("):
-            ind = re.findall("[\\d]+", text)
-            if ind != None:
+            ind = re.findall(r"[0-9]+", text)
+            if ind:
                 ind = int(ind[0])
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = support.factory.readElements(ind)
@@ -81,8 +81,8 @@ def processAdmin(text):
 
         # 📎 returns entire <programs> section from the node by providing the node index
         elif text.__contains__("readPrograms("):
-            ind = re.findall("[\\d]+", text)
-            if ind != None:
+            ind = re.findall(r"[0-9]+", text)
+            if ind:
                 ind = int(ind[0])
                 if ind > 0 and ind < len(support.factory.getNodes()) + 1:
                     message = support.factory.readPrograms(ind)
@@ -96,7 +96,7 @@ def processAdmin(text):
 
         # 📎 returns variable value by providing node index and variable name
         elif text.__contains__("readVar("): 
-            ind = int(re.findall("[\\d]+", text)[0])
+            ind = int(re.findall(r"[0-9]+", text)[0])
             if ind != None:
                 name = re.findall(r"\$[a-z0-9A-Z]+", text)
                 name = name[0]

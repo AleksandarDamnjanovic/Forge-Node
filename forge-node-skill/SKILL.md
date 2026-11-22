@@ -86,7 +86,7 @@ Whenever user asks to do something with its home or company automation that is b
   - $lastIndex is integer variable that holds the last active switch of this program by the index from $listOfSwitches
 
 ## App functions
-App can take 16 different commands with or without arguments in order to process user's request. Arguments are provided in the way `command` `firstArgument` `secondArgument`; examples `write-variable 1 $var1 25`, `change-list-value 3 $newVal 2`. Down is provided list of functions(commands) with arguments.
+App can take 16 different commands with or without arguments in order to process user's request. Arguments are provided in the way `command` `firstArgument` `secondArgument`; examples `write-variable 1 \$var1 25`, `change-list-value 3 \$newVal 2`. Down is provided list of functions(commands) with arguments.
 
 1. **write-variable** sets a new value to existing variable.
    1. index of node where variable is located
@@ -174,8 +174,10 @@ App can take 16 different commands with or without arguments in order to process
 ## Script path and execution
 Script PATH = path is located in this skill directory, `scripts` sub-directory
 
-## Warning
-In front of every $, you must use \ like \$
+## Warning (CRITICAL — Shell `$` Escaping)
+Whenever you pass a variable name starting with `$` to `client.py` in a terminal/shell command, you **MUST** escape `$` with `\` (like `\$f1`, `\$c1`, `\$res01`) or wrap it in single quotes (like `'$f1'`). If you write unescaped `$f1` or `$c1`, the shell expands it to an empty string and the command silently fails.
+- Example: `python PATH/client.py write-variable 1 \$f1 1` (CORRECT)
+- Never do: `python PATH/client.py write-variable 1 $f1 1` (WRONG — shell strips `$f1`)
 
 ## Global variables naming convention
 When is necessary to from one node to affect global variable from another node, naming convention needs to be followed.
@@ -185,13 +187,21 @@ When is necessary to from one node to affect global variable from another node, 
 When agent has to create variable, this **naming convention** must be followed. Agent will always name its variables as $agent and then first available index like `$agent1`, `$agent2`, `$agent3` and so on, so that name of the variable will always be unique on the node level.
 
 ## How to initialize service
-1. You are going to use `client.py` from Script PATH with python like `python PATH/client.py`. As first argument, you are always going to provide port number 10015. For second argument and on, you are going to use app functions and its arguments; for example, command would look like `python PATH/client.py 10010 read-variables 1`
+1. Use `client.py` from Script PATH with python like `python PATH/client.py`.
+   - **Connection address and port rules:**
+     - By default, `client.py` connects to `127.0.0.1` and default port number 10010 (synced automatically when AU port is changed in Forge Node).
+     - If the user **does not** mention a custom address or port, you may omit them or pass the default port, e.g. `python PATH/client.py 10010 read-variables 1` or `python PATH/client.py read-variables 1`.
+     - If the user **explicitly provides** a different address/IP/hostname and/or port number (for example: *"connect to 192.168.1.50 on 10020"* or *"target forge node at 10.0.0.15"*), you **must** pass `--host <address>` and/or `--port <port>` before the AU command:
+       - Custom host + custom port: `python PATH/client.py --host 192.168.1.50 --port 10020 read-variables 1`
+       - Custom host only (uses default port number 10010): `python PATH/client.py --host 192.168.1.50 read-variables 1`
+       - Custom port only (uses `127.0.0.1`): `python PATH/client.py --port 10020 read-variables 1`
+   - Keep using that same host/port override for all subsequent `client.py` calls during the user's request.
 2. get number of nodes from entire system by executing command `read-node-count`. keep in mind that nodes are enumerated from 1 on ...
 3. for every node index execute command `read-header` with node index as argument in order to get header text. Structure of header text is better explained in skill documentation `header.md`. The most important piece of data for the beginning is the first argument of the header function. That piece of data will be called `Location`
 4. memorize all of node names(Locations) and corresponding indexes. those information are necessary for all other processes.
 5. second most important piece of data is called `property`. Property is the first argument of functions sensor, switch, trigger, list. You have to memorize all of those properties for the future use. for reading sensors, function `read-sensors` is going to be used, and for switches, triggers and lists, function `read-elements`. Both of those functions are using index of the Location as argument.
 ### How to pass arguments to client.py???
-Arguments to client.py are passed in cli, not programming style, so if 2 arguments must be passed to client. py, do it like `python PATH/client.py argument1 argument2`
+Arguments to client.py are passed in cli, not programming style, so if 2 arguments must be passed to client.py, do it like `python PATH/client.py [--host HOST] [--port PORT] command argument1 argument2`
 
 ## Query analysis core rules
 1. First thing that agent should do, regardless of exact demand of user is to determine locations that should be affected(node indices) and properties(exact switch, sensor, trigger, list or even program).
@@ -259,7 +269,10 @@ If user needs some switch to be active longer that others, same principle like i
 
 ## Exact procedure
 In all of cases, always first perform `Query analysis core rules`, and in case of programs `Program handling core rules` must be implemented too.
-1.  In case of **switches** user can say something like `Turn on first light in my living room`, `Switch the first light in livin room` or `Turn livin room light 1 off` or any variation of those. Use command `write-variable` in order to set force variable of desired switch to wished value(0 for off and 1 for on, or `null` to reset the force variable back to `""` so programmable logic takes over).
+1.  In case of **switches** user can say something like `Turn on first light in my living room`, `Switch the first light in livin room` or `Turn livin room light 1 off` or any variation of those. A switch declaration has the form `switch("name", index, $programmableVar, $forceVar)`. For direct user turn-on/turn-off commands, **always** update the **4th argument (the force variable, e.g. `$f1`)**, **never** the 3rd argument (`$c1` programmable variable). Use `write-variable` with escaped `\$` (`1` for on, `0` for off, or `null` to reset the force variable back to `""` so programmable logic takes over):
+    - Turn on `switch("light0", 0, $c1, $f1)`: `python PATH/client.py write-variable 1 \$f1 1`
+    - Turn off `switch("light0", 0, $c1, $f1)`: `python PATH/client.py write-variable 1 \$f1 0`
+    - Release force override back to `""`: `python PATH/client.py write-variable 1 \$f1 null`
 2. In case of sensors, agent must know that direct updating of values of sensors is off limits. In case of **sensors**, user can ask 3 different things.
     - User can ask you do deal with epoch in one of two ways
         - to update epoch value agent should use function `write-variable` with arguments of node index, epoch variable for the exact sensor and new value for this variable that user provided.

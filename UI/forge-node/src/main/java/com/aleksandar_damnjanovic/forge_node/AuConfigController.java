@@ -101,19 +101,33 @@ public class AuConfigController {
 	}
 
 	private void syncForgeNodeSkillPort(int port) {
-		Path skillPath = resolveProjectRoot().resolve("forge-node-skill/SKILL.md");
-		if (!Files.isRegularFile(skillPath)) {
-			return;
-		}
-		try {
-			String content = Files.readString(skillPath, StandardCharsets.UTF_8);
-			String updated = content
-					.replaceAll("port number [0-9]{4,5}", "port number " + port)
-					.replaceAll("client\\.py [0-9]{4,5}", "client.py " + port);
-			if (!updated.equals(content)) {
-				Files.writeString(skillPath, updated, StandardCharsets.UTF_8);
+		Path projectRoot = resolveProjectRoot();
+		Path skillPath = projectRoot.resolve("forge-node-skill/SKILL.md");
+		if (Files.isRegularFile(skillPath)) {
+			try {
+				String content = Files.readString(skillPath, StandardCharsets.UTF_8);
+				String updated = content
+						.replaceAll("port number [0-9]{4,5}", "port number " + port)
+						.replaceAll("client\\.py [0-9]{4,5}", "client.py " + port);
+				if (!updated.equals(content)) {
+					Files.writeString(skillPath, updated, StandardCharsets.UTF_8);
+				}
+			} catch (Exception ignored) {
 			}
-		} catch (Exception ignored) {
+		}
+		Path clientPath = projectRoot.resolve("forge-node-skill/scripts/client.py");
+		if (Files.isRegularFile(clientPath)) {
+			try {
+				String content = Files.readString(clientPath, StandardCharsets.UTF_8);
+				String updated = content.replaceAll(
+						"FORGE_NODE_PORT\", \"[0-9]{4,5}\"",
+						"FORGE_NODE_PORT\", \"" + port + "\""
+				);
+				if (!updated.equals(content)) {
+					Files.writeString(clientPath, updated, StandardCharsets.UTF_8);
+				}
+			} catch (Exception ignored) {
+			}
 		}
 	}
 

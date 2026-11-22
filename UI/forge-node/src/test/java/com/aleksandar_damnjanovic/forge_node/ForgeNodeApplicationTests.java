@@ -304,6 +304,12 @@ class ForgeNodeApplicationTests {
 		java.nio.file.Path fullCfgFile = fullCfgDir.resolve("full-configuration.conf");
 		String origFullCfg = java.nio.file.Files.exists(fullCfgFile)
 				? java.nio.file.Files.readString(fullCfgFile) : null;
+		java.nio.file.Path skillMdFile = rootForProps.resolve("forge-node-skill/SKILL.md");
+		String origSkillMd = java.nio.file.Files.exists(skillMdFile)
+				? java.nio.file.Files.readString(skillMdFile) : null;
+		java.nio.file.Path skillClientFile = rootForProps.resolve("forge-node-skill/scripts/client.py");
+		String origSkillClient = java.nio.file.Files.exists(skillClientFile)
+				? java.nio.file.Files.readString(skillClientFile) : null;
 		try {
 			mockMvc.perform(post("/api/instance/full-config/save")
 							.cookie(tokenCookie)
@@ -338,6 +344,12 @@ class ForgeNodeApplicationTests {
 				java.nio.file.Files.writeString(fullCfgFile, origFullCfg);
 			} else {
 				java.nio.file.Files.deleteIfExists(fullCfgFile);
+			}
+			if (origSkillMd != null) {
+				java.nio.file.Files.writeString(skillMdFile, origSkillMd);
+			}
+			if (origSkillClient != null) {
+				java.nio.file.Files.writeString(skillClientFile, origSkillClient);
 			}
 		}
 

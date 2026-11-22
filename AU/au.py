@@ -49,7 +49,7 @@ def on_message(client, data, message):
                     temp = line
                 else:
                     temp = f"{temp}\n{line}"
-        text = f"{temp}\r\n"
+        text = f"{temp}\r\n" if temp != "" else "(empty)\r\n"
 
         if mode == "cli":
             print(text)
@@ -64,7 +64,7 @@ def on_message(client, data, message):
 if __name__=="__main__":
 
     mode = "cli"
-    HOST = "127.0.0.1"
+    HOST = "0.0.0.0"
     PORT = -1
 
     try:
@@ -114,6 +114,7 @@ if __name__=="__main__":
                         print(command)
             elif mode == "tcp":
                 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server.bind((HOST, PORT))
                 server.listen()
 
@@ -146,15 +147,26 @@ if __name__=="__main__":
                         else:
                             command = parseCommand(command)
                             if not command.startswith("Error"):
+                                accessories.support.lock.acquire()
+                                accessories.support.TEXT = ""
+                                accessories.support.lock.release()
                                 client.publish(accessories.support.topic, command)
                                 response = ""
-                                while response == "":
+                                deadline = time.monotonic() + 10.0
+                                while response == "" and time.monotonic() < deadline:
                                     time.sleep(0.1)
                                     accessories.support.lock.acquire()
                                     response = accessories.support.TEXT
                                     accessories.support.lock.release()
                                 accessories.support.lock.acquire()
                                 accessories.support.TEXT = ""
+                                if response == "":
+                                    response = "Error: Timed out waiting for AAU response\r\n"
+                                CONN.sendall(response.encode())
+                                accessories.support.lock.release()
+                            else:
+                                response = f"{command}\r\n"
+                                accessories.support.lock.acquire()
                                 CONN.sendall(response.encode())
                                 accessories.support.lock.release()
                             
