@@ -13,6 +13,7 @@ class nodeFactory:
         self.__nodes = list()
         self.__globalVars = list()
         self.__messages = list()
+        self.__packedMessages = dict()
         self.restartEpoh()
 
     def appendToGlobalVariables(self, variable):
@@ -21,12 +22,12 @@ class nodeFactory:
     def removeGlobalVariable(self, index, varName):
         var = None
         for i in self.__globalVars:
-            if i.getName() == varName:
+            if i.getNodeIndex() == int(index) and i.getName() == varName:
                 var = i
                 break
         if var != None:
             support.lock.acquire()
-            self.__globalVars.remove(i)
+            self.__globalVars.remove(var)
             support.lock.release()
 
     # 📎 default epoh is set to be 24 hours. whatever new epoh is going to be acrording to the script
@@ -41,9 +42,10 @@ class nodeFactory:
         f = open(support.scriptFile, "r")
         old= f.read()
         f.close()
-        f = open(support.baskupScriptFile, "w")
-        f.write(old)
-        f.close()
+        if support.backupScriptFile != "":
+            f = open(support.backupScriptFile, "w")
+            f.write(old)
+            f.close()
         f = open(support.scriptFile, "w")
         f.write(content)
         f.close()
@@ -109,6 +111,20 @@ class nodeFactory:
         for n in self.__nodes:
             if n.getNodeIndex() == index:
                 return f"{n.getNodeIndex()}(\"{n.getNodeName()}\", \"{n.getTopic()}\", [{n.getType()}]"
+
+    # 📎 returns textual - script representation of <meta> section for SHUNT, BRIDGE, or SLAVE nodes
+    def readMeta(self, index):
+        for n in self.__nodes:
+            if n.getNodeIndex() != index:
+                continue
+            varText = ""
+            if n.getSlaveOf() != None:
+                varText = f"{varText}\t\tmaster = {n.getSlaveOf()}\n"
+            if n.getMasterOf() != None and len(n.getMasterOf()) > 0:
+                slavesStr = ", ".join(str(s) for s in n.getMasterOf())
+                varText = f"{varText}\t\tslaves = [{slavesStr}]\n"
+            return varText
+        return ""
 
     # 📎 returns all textual - script representation of all of sensors in the node
     def readSensors(self, index):
@@ -195,9 +211,14 @@ class nodeFactory:
     def readAll(self):
         content = ""
         try:
-            for n in range(1, self.__nodes.__len__()+1):
+            for nodeObj in self.__nodes:
+                n = nodeObj.getNodeIndex()
                 text= self.readHeader(n)
-                text = text + "){\n\t<variables>\n"
+                text = text + "){\n"
+                metaText = self.readMeta(n)
+                if nodeObj.getType() in ("SHUNT", "BRIDGE", "SLAVE") or metaText != "":
+                    text = f"{text}\t<meta>\n{metaText}\t</meta>\n\n"
+                text = text + "\t<variables>\n"
                 varText = ""
                 varText = self.readVariables(n)
                 text = f"{text}{varText}\t</variables>\n\n\t<sensors>\n"
@@ -209,7 +230,7 @@ class nodeFactory:
                 text = f"{text}{varText}\t</elements>\n\n\t<programs>\n"
                 varText = ""
                 varText = self.readPrograms(n)
-                text = f"{text}\t</programs>\n"
+                text = f"{text}{varText}\t</programs>\n"
                 text = text + "}\n"
 
                 content = f"{content}{text}\n"
@@ -295,20 +316,28 @@ class nodeFactory:
         __tokens= text.split("_")
         __tokens= list(filter(None, __tokens))
 
-        if __tokens[0]=="I" or __tokens[0]== "Q":
-            return
+        if len(__tokens) < 2 or __tokens[0]=="I" or __tokens[0]== "Q":
+            return True, -1
 
-        __nodeIndex = int(__tokens[1])
+        try:
+            __nodeIndex = int(__tokens[1])
+        except Exception:
+            return True, -1
         presence= self.setNodePresenceByIndex(__nodeIndex , True)
         n = self.getNodeByIndex(__nodeIndex)
         if n != None:
             n.setPresenceTimeStamp(round(time.time()))
+        else:
+            return True, -1
 
         try:
             if __tokens[0] == "Ci" or __tokens[0] == "Cr":
 
                 value = self.getVariableByReference(__nodeIndex, __tokens[2], int(__tokens[3]))
+                if value == None:
+                    return True, -1
                 varName = value
+                varObj = n.getVariable(varName)
                 value = n.getVariableValueByName(value)
                 force = None
                 if __tokens[0] == "Ci":
@@ -321,7 +350,10 @@ class nodeFactory:
                 elif __tokens[2] == "T":
                     conf = __tokens[4]
                 elif __tokens[2] == "S" or __tokens[2] == "R":
-                    conf = float(__tokens[4])    
+                    if varObj != None and varObj.getType().__contains__("int"):
+                        conf = int(float(__tokens[4]))
+                    else:
+                        conf = float(__tokens[4])    
 
                 if __tokens[0] == "Ci":
                     forceStr = "" if force is None else str(force).replace("\"", "").strip()
@@ -366,27 +398,58 @@ class nodeFactory:
 
    # 📎 return messages from the single node
     def getMessagesByIndex(self, index):
+        if index in self.__packedMessages:
+            packed = self.__packedMessages[index]
+            return [packed] if packed != "" else list()
         messages = list()
         for m in self.getMessages():
             mm = str(m).split("_")
-            mm = int(mm[1])
-            if mm == index:
-                messages.append(m)
+            if len(mm) > 1:
+                mm = int(mm[1])
+                if mm == index:
+                    messages.append(m)
         return messages
 
-    # 📎 return messages from a single SHUNT node
+    # 📎 recursively resolves all downstream BRIDGE and SLAVE node indices under a SHUNT/BRIDGE node
+    def getDownstreamNodeIndices(self, node, visited=None):
+        if visited == None:
+            visited = set()
+        nodeIdx = node.getNodeIndex()
+        if nodeIdx in visited:
+            return visited
+        visited.add(nodeIdx)
+
+        directSlaves = node.getMasterOf() or list()
+        for slaveIdx in directSlaves:
+            if slaveIdx not in visited:
+                childNode = self.getNodeByIndex(slaveIdx)
+                if childNode != None:
+                    self.getDownstreamNodeIndices(childNode, visited)
+                else:
+                    visited.add(slaveIdx)
+
+        for otherNode in self.getNodes():
+            if otherNode.getSlaveOf() == nodeIdx and otherNode.getNodeIndex() not in visited:
+                self.getDownstreamNodeIndices(otherNode, visited)
+
+        return visited
+
+    # 📎 return messages from a single SHUNT node (including its downstream BRIDGE and SLAVE nodes)
     def getMessagesForShunt(self, node):
         messages = list()
+        targetIndices = self.getDownstreamNodeIndices(node)
         for m in self.getMessages():
             mm = str(m).split("_")
-            mm = int(mm[1])
-            if mm in node.getMasterOf() or mm == node.getNodeIndex():
-                messages.append(m)
+            if len(mm) > 1:
+                mm = int(mm[1])
+                if mm in targetIndices:
+                    messages.append(m)
         return messages
 
    # 📎 create entire pack of messages that are going to be sent to all of clients
     def packMessages(self):
         temp = list()
+        self.__packedMessages.clear()
         for n in self.getNodes():
 
             if n.getType() == "BRIDGE" or n.getType() == "SLAVE":
@@ -403,12 +466,14 @@ class nodeFactory:
                 message = f"{message}{delim}{m}"
                 if delim == "":
                     delim = " "
+            self.__packedMessages[ind] = message
             temp.append(message)
         self.__messages = temp
 
    # 📎 remove all of messages from the list of messages
     def clearMessages(self):
         self.__messages.clear()
+        self.__packedMessages.clear()
 
    # 📎 get all of messages
     def getMessages(self):

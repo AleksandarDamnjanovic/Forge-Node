@@ -66,6 +66,7 @@ if __name__=="__main__":
     mode = "cli"
     HOST = "0.0.0.0"
     PORT = -1
+    th = None
 
     try:
     
@@ -73,11 +74,15 @@ if __name__=="__main__":
             raise Exception("Wrong arguments. Provide argument help for explanation")
         elif sys.argv[1]== "help":
             print(accessories.help.arguments)
-            quit()
+            sys.exit(0)
         elif sys.argv[1]=="cli":
             pass
         elif sys.argv[1]=="tcp":
+            if len(sys.argv) < 3:
+                raise Exception("TCP mode requires a port argument (e.g., python3 au.py tcp 10010 [host])")
             PORT = int(sys.argv[2])
+            if len(sys.argv) >= 4:
+                HOST = sys.argv[3]
             mode = "tcp"
         else:
             raise Exception("Wrong arguments. Provide argument help for explanation")
@@ -96,14 +101,14 @@ if __name__=="__main__":
 
         time.sleep(1)
         print(f"KS Administrative Unit, ready to serve...")
-        while(True):
-            if mode == "cli":
+        if mode == "cli":
+            while(True):
                 command = input()
                 if command == "exit":
                     print("KS Administrative Unit, terminated")
                     accessories.support.kill= True
                     th.join()
-                    quit()
+                    sys.exit(0)
                 elif command == "help":
                     print(help)
                 else:
@@ -112,33 +117,23 @@ if __name__=="__main__":
                         client.publish(accessories.support.topic, command)
                     else:
                         print(command)
-            elif mode == "tcp":
-                server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                server.bind((HOST, PORT))
-                server.listen()
+        elif mode == "tcp":
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind((HOST, PORT))
+            server.listen()
 
-                while True:
-                    accessories.support.lock.acquire()
-                    CONN, addr = server.accept()
-                    accessories.support.lock.release()
+            while True:
+                CONN, addr = server.accept()
+                try:
                     with CONN:
-                        accessories.support.lock.acquire()
                         data = CONN.recv(4096)
-                        accessories.support.lock.release()
                         command = data.decode().strip()
                         if command == "":
                             continue
                         if command == "exit":
-                            response = f"KS Administrative Unit, terminated\r\n"
-                            print(response)
-                            accessories.support.lock.acquire()
+                            response = f"Error: 'exit' command is disabled in TCP mode. Stop AU via the Forge Node UI or process manager.\r\n"
                             CONN.sendall(response.encode())
-                            accessories.support.lock.release()
-                            accessories.support.kill= True
-                            th.join()
-                            quit()
-                            sys.exit(1)
                         elif command == "help":
                             response = f"{help}\r\n"
                             accessories.support.lock.acquire()
@@ -169,9 +164,14 @@ if __name__=="__main__":
                                 accessories.support.lock.acquire()
                                 CONN.sendall(response.encode())
                                 accessories.support.lock.release()
+                except SystemExit:
+                    raise
+                except Exception as conn_err:
+                    print(f"--tcp connection-- error message:{conn_err}")
                             
     except Exception as e:
         print(f"KS Administrative Unit configuration error\r\n\t{e}")
         accessories.support.kill= True
-        th.join()
-        quit()
+        if th is not None and th.is_alive():
+            th.join()
+        sys.exit(1)

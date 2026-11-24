@@ -27,7 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
 			}
 			cwd = cwd.getParent();
 		}
-		return Paths.get("/home/irishpub/Programming/Forge Node");
+		return Paths.get("").toAbsolutePath().normalize();
 	}
 
 	private Path resolveStaticRoot() {

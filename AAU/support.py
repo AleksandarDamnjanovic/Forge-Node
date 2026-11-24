@@ -17,6 +17,7 @@ user = ""
 password = ""
 
 lock = threading.Lock()
+rerunLock = threading.Lock()
 
 file = open("./configuration.conf", "r")
 configuration = file.read()
@@ -83,7 +84,4 @@ class communication(threading.Thread):
 
         self.__client.subscribe(self.__topic)
         logit(f"{self.__topic} ... listening")
-        while(True):
-            self.__client.loop_start()
-            time.sleep(1)
-            self.__client.loop_stop()
+        self.__client.loop_forever()

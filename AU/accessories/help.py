@@ -38,13 +38,13 @@ FUNCTIONS
 \t\tthere are 5 arguments for every condition and result.
 \t\tleft side, left type, right side, right tyle and sign
 
-\tremove-valuel-condition-program index name
+\tremove-value-condition-program index name
 \t\tremoves val condition program by provided name and from node with provided index
 
-\tadd-time-lim-program index name start end
+\tadd-time-limit-program index name start end
 \t\tcreates new time limit program where start and end are the starting and ending time
 
-\tremove-time-lim-program index name
+\tremove-time-limit-program index name
 \t\tremoves time limit program by privided name from node with provided index
 
 \tadd-serial-program index name listOfSwitches epoh lastIndex functionName=None

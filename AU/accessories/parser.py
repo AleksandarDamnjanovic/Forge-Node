@@ -7,15 +7,19 @@
 *************** Location: Kragujevac, Serbia
 '''
 
+import re
+
 def parseCommand(text):
     try:
         message= ""
-        text = text.split(" ")
+        rawTokens = re.findall(r'"[^"]*"|\'[^\']*\'|\[[^\]]*\]|\S+', str(text))
         temp = list()
-        for a in text:
+        for a in rawTokens:
             if a != " " and a != "":
-                if str(a).__contains__("\$"):
-                    a= str(a).replace("\$", "$")
+                if str(a).__contains__("\\$"):
+                    a= str(a).replace("\\$", "$")
+                if len(a) >= 2 and ((a.startswith('"') and a.endswith('"')) or (a.startswith("'") and a.endswith("'"))):
+                    a = a[1:-1]
                 temp.append(a)
 
         s = temp
@@ -94,33 +98,23 @@ def parseCommand(text):
                     counter = counter + 1
             message = f"{message}{index},{name})"
         
-        # 📖 six arguments needed; node index, program name, variable that holds list of switches, integer variable
-        # 📖 that holds epoch time, integer varaible that holds the last index and function name that is None by default
+        # 📖 six or seven arguments needed; node index, program name, variable that holds list of switches, integer variable
+        # 📖 that holds epoch time, optional timestamp variable, integer varaible that holds the last index and function name that is None by default
         elif(s[0]=="add-serial-program"):
-            counter = 1
-            index = 0
-            name = ""
-            listOfSwitches = ""
-            epoh = ""
-            lastIndex = ""
-            functionName = "None"
-            message = "addSerialProgram("
-            for i in range(1, s.__len__()):
-                if s[i] != "":
-                    if counter == 1:
-                        index = int(s[i])
-                    elif counter == 2:
-                        name = s[i]
-                    elif counter == 3:
-                        listOfSwitches = s[i]
-                    elif counter == 4:
-                        epoh = s[i]
-                    elif counter == 5:
-                        lastIndex = s[i]
-                    elif counter == 6:
-                        functionName = s[i]
-                    counter = counter + 1
-            message = f"{message}{index}, {name}, {listOfSwitches}, {epoh}, {lastIndex}, {functionName})"
+            args = [x for x in s[1:] if x != ""]
+            index = int(args[0])
+            name = args[1]
+            listOfSwitches = args[2]
+            epoh = args[3]
+            if len(args) >= 7:
+                switchTime = args[4]
+                lastIndex = args[5]
+                functionName = args[6]
+                message = f"addSerialProgram({index}, {name}, {listOfSwitches}, {epoh}, {switchTime}, {lastIndex}, {functionName})"
+            else:
+                lastIndex = args[4]
+                functionName = args[5] if len(args) >= 6 else "None"
+                message = f"addSerialProgram({index}, {name}, {listOfSwitches}, {epoh}, {lastIndex}, {functionName})"
         
         # 📖 two arguments needed; node index and serial program name
         elif(s[0]=="remove-serial-program"):
@@ -138,7 +132,7 @@ def parseCommand(text):
             message = f"{message}{index}, {name})"
         
         # 📖 four arguments necessary; first is node index, than name of the program, start time variable and end time variable
-        elif(s[0]=="add-time-limit-program"):
+        elif(s[0]=="add-time-limit-program" or s[0]=="add-time-lim-program"):
             counter = 1
             index = 0
             name = ""
@@ -159,7 +153,7 @@ def parseCommand(text):
             message = f"{message}{index}, {name}, {start}, {end})"
 
         # 📖 two arguments necessary; first is node index and second is name of time limit program
-        elif(s[0]=="remove-time-limit-program"):
+        elif(s[0]=="remove-time-limit-program" or s[0]=="remove-time-lim-program"):
             counter = 1
             index = 0
             name = ""
@@ -232,7 +226,7 @@ def parseCommand(text):
             message = f"{message}{index}, {name},{numOfConditions},{numOfResults}{con_text}{res_text},{funName})"
 
         # 📖 two necessary arguments; node index and program name
-        elif(s[0]=="remove-value-condition-program"):
+        elif(s[0]=="remove-value-condition-program" or s[0]=="remove-valuel-condition-program"):
             counter = 1
             index = 0
             name = ""

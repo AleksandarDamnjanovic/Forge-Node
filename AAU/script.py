@@ -56,7 +56,7 @@ def writeNode(index, text):
     NODES = content.split("}")
     newContent = ""
     for i in range(0, NODES.__len__()):
-        if not (NODES[i].__contains__("MASTER")) or (NODES[i].__contains__("SLAVE")):
+        if not (NODES[i].__contains__("MASTER")) and not (NODES[i].__contains__("SLAVE")) and not (NODES[i].__contains__("SHUNT")) and not (NODES[i].__contains__("BRIDGE")):
             continue
         und = int(re.search("[0-9]+", NODES[i])[0])
         if und == int(index):
@@ -73,10 +73,11 @@ def writeNode(index, text):
     while support.START == True:
         time.sleep(0.1)
 
-    support.START = True
-    buildAll()
-    refresh()
-    support.START = False
+    with support.rerunLock:
+        support.START = True
+        buildAll()
+        refresh()
+        support.START = False
 
     return "UPDATED"
 
@@ -95,10 +96,13 @@ def removeSerialProgram(index, name):
 
 # 📎 this function creates serial program out of provided arguments and adds it to
 # 📎 the program list of the node with provided index
-def addSerialProgram(index, name, listOfSwitches, epoh, lastIndex, functionName = None):
+def addSerialProgram(index, name, listOfSwitches, epoh, lastIndex, functionName = None, switchTime = None):
     try:
         n = support.factory.getNodeByIndex(int(index))
-        s= serial(name, listOfSwitches, epoh, "$opop", lastIndex, funName= functionName)
+        stVar = switchTime if switchTime != None else "$opop"
+        if n.getVariable(stVar) == None:
+            n.appendVariableToTheNode(variable("int", stVar, 0))
+        s= serial(name, listOfSwitches, epoh, stVar, lastIndex, funName= functionName)
         result= n.addSerialProgram(s)
         if result:
             return "UPDATED"
@@ -206,14 +210,15 @@ def createVariable(index, varName, globalVar, varType, varValue):
 # 📎 then, newly selected value is going to be transmitter to the node
 def changeListValue(index, listName, listValue):
     n = support.factory.getNodeByIndex(int(index))
-    LIST = n.getListByName(listName)
-    var = LIST.getState()
-    val = n.getVariableValueByName(var)
+    LIST = n.getListByName(listName) if n != None else None
 
     if(LIST==None):
         text= f"list with name of {listName} on node with index {index} not existing"
         logit(text, 2)
         return text
+
+    var = LIST.getState()
+    val = n.getVariableValueByName(var)
 
     writeVar(index, var, listValue)
     val1 = n.getVariableValueByName(var)
@@ -226,7 +231,11 @@ def changeListValue(index, listName, listValue):
 # 📎 this function affects only SENSORS. when called it returns value from memory variable of the named sensor
 def getSensorReadings(index, sensorName):
     n = support.factory.getNodeByIndex(int(index))
-    sensor = n.getSensorByName(sensorName)
+    sensor = n.getSensorByName(sensorName) if n != None else None
+    if sensor == None:
+        text= f"sensor with name of {sensorName} on node with index {index} not existing"
+        logit(text, 2)
+        return text
     readings = sensor.getReadings()
     val = n.getVariableValueByName(readings)
 
@@ -240,14 +249,15 @@ def getSensorReadings(index, sensorName):
 # 📎 this function affects only TRIGGERS. when called, it changes value of its regular variable
 def changeTriggerValue(index, triggerName, triggerValue):
     n = support.factory.getNodeByIndex(int(index))
-    trigger = n.getTriggerByName(triggerName)
-    var = trigger.getValue()
-    val = n.getVariableValueByName(var)
+    trigger = n.getTriggerByName(triggerName) if n != None else None
 
     if(trigger==None):
         text= f"trigger with name of {triggerName} on node with index {index} not existing"
         logit(text, 2)
         return text
+
+    var = trigger.getValue()
+    val = n.getVariableValueByName(var)
 
     writeVar(index, var, triggerValue)
     val1 = n.getVariableValueByName(var)
@@ -260,7 +270,11 @@ def changeTriggerValue(index, triggerName, triggerValue):
 # 📎 this function updates value of variable by providing node index, variable name and the new value
 def writeVar(index, varName, varValue):
     n = support.factory.getNodeByIndex(int(index))
+    if n == None:
+        return "ERROR"
     variable = n.getVariable(varName)
+    if variable == None:
+        return "ERROR"
     type= variable.getType()
     try:
         if (type.__contains__("string")):
@@ -277,10 +291,21 @@ def writeVar(index, varName, varValue):
         return errorText
     n.setVariableValueByName(varName, varValue)
     val = n.getVariableValueByName(varName)
-    if variable.getType()== "array":
-        tokens = varValue.split(",")
+    if variable.getType().__contains__("array"):
+        rawCheck = str(varValue).strip()
+        if rawCheck.startswith("[") and rawCheck.endswith("]"):
+            rawCheck = rawCheck[1:-1].strip()
+        if rawCheck == "":
+            return "ARRAY UPDATED" if len(val) == 0 else "ARRAY ERROR"
+        rangeMatch = re.match(r"^\s*([0-9]+)\s*-\s*([0-9]+)\s*$", rawCheck)
+        if rangeMatch:
+            expectedLen = int(rangeMatch.group(2)) - int(rangeMatch.group(1)) + 1
+            return "ARRAY UPDATED" if len(val) == expectedLen else "ARRAY ERROR"
+        tokens = [t.strip().replace("\"", "") for t in rawCheck.split(",") if t.strip() != ""]
+        if len(val) != len(tokens):
+            return "ARRAY ERROR"
         for i in range(0, len(val)):
-            if val[i] != tokens[i]:
+            if str(val[i]) != str(tokens[i]):
                 return "ARRAY ERROR"
         return "ARRAY UPDATED"
     if str(val) == str(varValue):

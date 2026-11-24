@@ -182,7 +182,7 @@ public class MqttBridgeController {
 			}
 			cwd = cwd.getParent();
 		}
-		return Paths.get("/home/irishpub/Programming/Forge Node");
+		return Paths.get("").toAbsolutePath().normalize();
 	}
 
 	private Path resolveMonitorDir() {
@@ -2397,6 +2397,8 @@ public class MqttBridgeController {
 						if (line.startsWith("data:")) {
 							String payload = line.substring(5).trim();
 							emitter.send(SseEmitter.event().data(payload));
+						} else if (line.startsWith(":")) {
+							emitter.send(SseEmitter.event().comment("keepalive"));
 						}
 					}
 				}

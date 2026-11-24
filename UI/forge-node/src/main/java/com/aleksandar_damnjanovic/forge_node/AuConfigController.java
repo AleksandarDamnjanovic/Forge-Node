@@ -145,6 +145,10 @@ public class AuConfigController {
 				Path abs = Paths.get(p).toAbsolutePath().normalize();
 				return abs.startsWith(projectRoot) ? abs : null;
 			}
+			Path fromConfDir = resolveAuConfigPath().getParent().resolve(p).toAbsolutePath().normalize();
+			if (fromConfDir.startsWith(projectRoot) && Files.isRegularFile(fromConfDir)) {
+				return fromConfDir;
+			}
 			Path fromAu = resolveAuDir().resolve(p).toAbsolutePath().normalize();
 			if (fromAu.startsWith(projectRoot) && Files.isRegularFile(fromAu)) {
 				return fromAu;
@@ -152,6 +156,9 @@ public class AuConfigController {
 			Path fromRoot = projectRoot.resolve(p).toAbsolutePath().normalize();
 			if (fromRoot.startsWith(projectRoot) && Files.isRegularFile(fromRoot)) {
 				return fromRoot;
+			}
+			if (fromConfDir.startsWith(projectRoot)) {
+				return fromConfDir;
 			}
 			return fromAu.startsWith(projectRoot) ? fromAu : null;
 		} catch (Exception e) {
@@ -180,6 +187,9 @@ public class AuConfigController {
 				}
 				int eq = line.indexOf('=');
 				String key = line.substring(0, eq).trim();
+				if ("certificate".equals(key)) {
+					key = "ca";
+				}
 				String val = line.substring(eq + 1).trim();
 				if (val.length() >= 2 && val.startsWith("\"") && val.endsWith("\"")) {
 					val = val.substring(1, val.length() - 1);
@@ -298,6 +308,10 @@ public class AuConfigController {
 		if (body != null && body.containsKey("exposeAu")) {
 			this.exposeAu = Boolean.parseBoolean(String.valueOf(body.get("exposeAu")));
 			persistExposeAuProperty(this.exposeAu);
+			if (!this.exposeAu && localAuProcess != null && localAuProcess.isAlive()) {
+				localAuProcess.destroy();
+				localAuProcess = null;
+			}
 		}
 		if (body != null && body.get("auPort") != null) {
 			try {
@@ -452,6 +466,15 @@ public class AuConfigController {
 
 	@PostMapping(value = "/start", produces = MediaType.APPLICATION_JSON_VALUE)
 	public synchronized ResponseEntity<Map<String, Object>> startAu(@RequestBody(required = false) Map<String, Object> body) {
+		if (!this.exposeAu) {
+			return ResponseEntity.status(403).body(Map.of(
+					"ok", false,
+					"auRunning", isLocalAuRunning(),
+					"auConfigured", isAuConfigReady(),
+					"auPort", this.auPort,
+					"error", "Expose AU is disabled. Enable 'Expose AU' first before starting the AU TCP server."
+			));
+		}
 		int requestedPort = this.auPort;
 		if (body != null && body.get("port") != null) {
 			try {

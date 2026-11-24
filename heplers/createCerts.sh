@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p ../certs ../SHARED
+mkdir -p ../SHARED
 
 if [ "${FN_NON_INTERACTIVE:-0}" = "1" ]; then
     set -e

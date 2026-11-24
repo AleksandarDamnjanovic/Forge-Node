@@ -187,12 +187,13 @@ class node:
     def removeFunctionNames(self, name):
         var = None
         for i in self.__funNames:
-            if i.getName() == name:
+            itemName = i.getName() if hasattr(i, "getName") else i
+            if itemName == name:
                 var = i
                 break
         if var != None:
             support.lock.acquire()
-            self.__funNames.remove(i)
+            self.__funNames.remove(var)
             support.lock.release()
             return True
         else:
@@ -261,9 +262,15 @@ class node:
                 if v.getName() == name:
                     return v.getValue()
         else:
+            targetName = nm if str(nm).startswith("$") else f"${nm}"
             for v in support.factory.getGlobalVars():
-                if v.getNodeIndex() == ind and v.getName() == nm:
+                if v.getNodeIndex() == ind and v.getName() == targetName:
                     return v.getValue()
+            for n in support.factory.getNodes():
+                if n.getNodeIndex() == ind:
+                    for v in n.getVariables():
+                        if v.getName() == targetName:
+                            return v.getValue()
         return None
 
    # 📎 sets value for variable with the given name
@@ -331,11 +338,14 @@ class node:
             force = "" if rawForce is None else str(rawForce).replace("\"", "").strip()
             elements = self.getVariableValueByName(s.getListValues())
             v= None
-            if force != "" and force.lower() != "null":
-                v = int(force)
-            else:
+            try:
+                if force != "" and force.lower() != "null":
+                    v = int(force)
+                else:
+                    v = int(val) if val is not None else 0
+            except Exception:
                 v = val
-            if v < len(elements):
+            if elements is not None and isinstance(v, int) and v < len(elements):
                 message = f"I_{self.getNodeIndex()}_T_{s.getIndex()}_{v}"
                 support.factory.appendMessage(message)
 
@@ -343,11 +353,16 @@ class node:
     def processSensors(self):
         for s in self.getSensors():
             if s.getEpoh() != None:
-                if self.__nodeEpoh > self.getVariableValueByName(s.getEpoh()):
-                    self.__nodeEpoh = self.getVariableValueByName(s.getEpoh())
+                epVal = self.getVariableValueByName(s.getEpoh())
+                if epVal == None:
+                    try:
+                        epVal = int(s.getEpoh())
+                    except Exception:
+                        epVal = None
+                if epVal != None and self.__nodeEpoh > epVal:
+                    self.__nodeEpoh = epVal
                 message = f"I_{self.getNodeIndex()}_S_{s.getIndex()}"
                 support.factory.appendMessage(message)
-                break
 
    # 📎 processes messages for entire node
     def processNode(self):
@@ -411,18 +426,20 @@ class node:
     # 📎 is setting a new value for fun variable ***************************************************************
     def parseValueFromStatement(self, value, type):
         val = None
-        if type== "var":
+        if type == "var" or str(value).startswith("$"):
             val = self.getVariableValueByName(value)
         else:
-            testFloat = re.findall("[0-9]+\\.[0-9]+", value)
-            testInt = re.findall("[0-9]+", value)
-            testString = re.findall("\"[\\d\\w\\s]\"", value)
+            testFloat = re.findall("[0-9]+\\.[0-9]+", str(value))
+            testInt = re.findall("[0-9]+", str(value))
+            testString = re.findall("\"[\\d\\w\\s\\.\\,\\-\\_]*\"", str(value))
             if len(testFloat)>0:
                 val = float(testFloat[0])
             elif len(testInt)>0:
                 val = int(testInt[0])
             elif len(testString)>0:
-                val = str(testString[0])
+                val = str(testString[0]).replace("\"", "")
+            else:
+                val = str(value).replace("\"", "")
         return val
 
     def processValConditions(self):
@@ -442,12 +459,24 @@ class node:
                     if left != right:
                         condition = False
                         break
-                if s.getCase() == ">":
-                    if left <= right:
+                elif s.getCase() == "!=":
+                    if left == right:
                         condition = False
                         break
-                if s.getCase() == "<":
-                    if left >= right:
+                elif s.getCase() == ">":
+                    if left is None or right is None or left <= right:
+                        condition = False
+                        break
+                elif s.getCase() == "<":
+                    if left is None or right is None or left >= right:
+                        condition = False
+                        break
+                elif s.getCase() == ">=":
+                    if left is None or right is None or left < right:
+                        condition = False
+                        break
+                elif s.getCase() == "<=":
+                    if left is None or right is None or left > right:
                         condition = False
                         break
 

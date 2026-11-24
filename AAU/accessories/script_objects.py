@@ -207,20 +207,26 @@ class variable:
             self.__value = vStr
         elif(self.__type.__contains__("array")):
             v = list()
-            e= re.findall("[a-zA-Z0-9\\$\\_\\-\\%\"]+", value)
-            if e[0].__contains__("-"):
-                n = re.findall("[\\d]+", e[0])
-                n = int(n[1])
-                nn = list()
-                for i in range(0, n+1):
-                    nn.append(i)
-                self.__value = nn
-            else:
-                for ee in e:
-                    if str(ee).__contains__("\""):
-                        ee = str(ee).replace("\"", "")
-                    v.append(ee)
+            raw = "" if value is None else str(value).strip()
+            if raw.startswith("[") and raw.endswith("]"):
+                raw = raw[1:-1].strip()
+            if raw == "":
                 self.__value = v
+            else:
+                rangeMatch = re.match(r"^\s*([0-9]+)\s*-\s*([0-9]+)\s*$", raw)
+                if rangeMatch:
+                    startNum = int(rangeMatch.group(1))
+                    endNum = int(rangeMatch.group(2))
+                    self.__value = list(range(startNum, endNum + 1))
+                else:
+                    parts = [p.strip() for p in raw.split(",") if p.strip() != ""]
+                    for ee in parts:
+                        if ee.startswith("\"") and ee.endswith("\"") and len(ee) >= 2:
+                            ee = ee[1:-1]
+                        elif str(ee).__contains__("\""):
+                            ee = str(ee).replace("\"", "")
+                        v.append(ee)
+                    self.__value = v
         elif(self.__type.__contains__("fun")):
             self.__value = int(value)
 

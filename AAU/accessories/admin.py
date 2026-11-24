@@ -31,6 +31,44 @@ from accessories.script_objects import valCondition, statement
 20    readHeader(ind)
 '''
 
+def _extractAdminTokens(text, fallbackRegex):
+    openIdx = text.find("(")
+    closeIdx = text.rfind(")")
+    if openIdx != -1 and closeIdx != -1 and closeIdx > openIdx:
+        fnName = text[:openIdx].strip()
+        inner = text[openIdx + 1:closeIdx].strip()
+        if inner == "":
+            return [fnName]
+        if "," in inner:
+            args = list()
+            cur = ""
+            depth = 0
+            inQuote = False
+            for ch in inner:
+                if ch == '"':
+                    inQuote = not inQuote
+                    cur += ch
+                elif not inQuote and ch == '[':
+                    depth += 1
+                    cur += ch
+                elif not inQuote and ch == ']':
+                    depth = max(0, depth - 1)
+                    cur += ch
+                elif not inQuote and depth == 0 and ch == ',':
+                    arg = cur.strip()
+                    if len(arg) >= 2 and arg.startswith('"') and arg.endswith('"'):
+                        arg = arg[1:-1]
+                    args.append(arg)
+                    cur = ""
+                else:
+                    cur += ch
+            arg = cur.strip()
+            if len(arg) >= 2 and arg.startswith('"') and arg.endswith('"'):
+                arg = arg[1:-1]
+            args.append(arg)
+            return [fnName] + args
+    return re.findall(fallbackRegex, text)
+
 def processAdmin(text):
     message = ""
 
@@ -40,7 +78,7 @@ def processAdmin(text):
             ind = re.findall(r"[0-9]+", text)
             if ind:
                 ind = int(ind[0])
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = support.factory.readHeader(ind)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -51,7 +89,7 @@ def processAdmin(text):
             tokens = re.findall(r"[0-9]+", text)
             ind = int(tokens[0])
             if ind != None:
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = support.factory.readVariables(ind)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -62,7 +100,7 @@ def processAdmin(text):
             ind = re.findall(r"[0-9]+", text)
             if ind:
                 ind = int(ind[0])
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = support.factory.readSensors(ind)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -73,7 +111,7 @@ def processAdmin(text):
             ind = re.findall(r"[0-9]+", text)
             if ind:
                 ind = int(ind[0])
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = support.factory.readElements(ind)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -84,7 +122,7 @@ def processAdmin(text):
             ind = re.findall(r"[0-9]+", text)
             if ind:
                 ind = int(ind[0])
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = support.factory.readPrograms(ind)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -98,9 +136,9 @@ def processAdmin(text):
         elif text.__contains__("readVar("): 
             ind = int(re.findall(r"[0-9]+", text)[0])
             if ind != None:
-                name = re.findall(r"\$[a-z0-9A-Z]+", text)
+                name = re.findall(r"\$[a-z0-9A-Z\_\$]+", text)
                 name = name[0]
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = support.factory.readVar(ind, name)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -110,7 +148,7 @@ def processAdmin(text):
         # 📎 both arguments are forwarded to getSensorReadings function in script.py
         # 📎 the point is to get value from the particular sensor directly             
         elif text.__contains__("getSensorReadings"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\-\_\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\-\_\+]+")
             if tokens.__len__() != 3:
                 logit(f"received message {text} in function getSensorReadings, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -118,7 +156,7 @@ def processAdmin(text):
             ind = int(tokens[1])
             if ind != None:
                 sensorName = tokens[2]
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = script.getSensorReadings(ind, sensorName)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -126,7 +164,7 @@ def processAdmin(text):
 
         # 📎 this function needs only two arguments. first is node index and second is name of serial program to be remvoed
         elif text.__contains__("removeSerialProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\_\-\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\_\-\+]+")
 
             try:
                 if tokens.__len__() != 3:
@@ -136,10 +174,10 @@ def processAdmin(text):
                 name = tokens[2]
 
                 if index != None:
-                    if index > 0 and index < len(support.factory.getNodes()) + 1:
+                    if support.factory.getNodeByIndex(index) != None:
                         message = script.removeSerialProgram(index, name)
                     else:
-                        logit(f"index {ind} received by querry, is out of limits", 2)
+                        logit(f"index {index} received by querry, is out of limits", 2)
                         message = "--no result--"
 
             except Exception as e:
@@ -151,26 +189,32 @@ def processAdmin(text):
         # 📎 necessary arguments are node index, name, list of switches, switch epoh, last index and function name
         # 📎 time stamp is not provided as argument. it is presumed to be 0
         elif text.__contains__("addSerialProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\_\-\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\_\-\+]+")
 
             try:
-                if tokens.__len__() != 7:
+                if tokens.__len__() != 7 and tokens.__len__() != 8:
                     raise Exception("incorect number of arguments")
 
                 index = int(tokens[1])
                 name = tokens[2]
                 listOfSwitches = tokens[3]
                 epoh = tokens[4]
-                lastIndex = tokens[5]
-                funName = tokens[6]
+                switchTime = None
+                if tokens.__len__() == 8:
+                    switchTime = tokens[5]
+                    lastIndex = tokens[6]
+                    funName = tokens[7]
+                else:
+                    lastIndex = tokens[5]
+                    funName = tokens[6]
                 if funName == "None":
                     funName = None
 
                 if index != None:
-                    if index > 0 and index < len(support.factory.getNodes()) + 1:
-                        message = script.addSerialProgram(index, name, listOfSwitches, epoh, lastIndex, functionName=funName)
+                    if support.factory.getNodeByIndex(index) != None:
+                        message = script.addSerialProgram(index, name, listOfSwitches, epoh, lastIndex, functionName=funName, switchTime=switchTime)
                     else:
-                        logit(f"index {ind} received by querry, is out of limits", 2)
+                        logit(f"index {index} received by querry, is out of limits", 2)
                         message = "--no result--"
 
             except Exception as e:
@@ -181,7 +225,7 @@ def processAdmin(text):
         # 📎 this function calls removeTimeLimProgram from script.py
         # 📎 necessary arguments are node index and function variable name
         elif text.__contains__("removeTimeLimProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\_\-\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\_\-\+]+")
 
             try:
                 if tokens.__len__() != 3:
@@ -191,10 +235,10 @@ def processAdmin(text):
                 funName = tokens[2]
 
                 if index != None:
-                    if index > 0 and index < len(support.factory.getNodes()) + 1:
+                    if support.factory.getNodeByIndex(index) != None:
                         message = script.removeTimeLimProgram(index, funName)
                     else:
-                        logit(f"index {ind} received by querry, is out of limits", 2)
+                        logit(f"index {index} received by querry, is out of limits", 2)
                         message = "--no result--"
 
             except Exception as e:
@@ -207,7 +251,7 @@ def processAdmin(text):
         # 📎 therefore is recomended to call variable creating function or manually changing the script before
         # 📎 calling addTimeLimProgram function
         elif text.__contains__("addTimeLimProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\_\-\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\_\-\+]+")
 
             try:
                 if tokens.__len__() != 5:
@@ -219,10 +263,10 @@ def processAdmin(text):
                 end = tokens[4]
 
                 if index != None:
-                    if index > 0 and index < len(support.factory.getNodes()) + 1:
+                    if support.factory.getNodeByIndex(index) != None:
                         message = script.addTimeLimProgram(index, funName, start, end)
                     else:
-                        logit(f"index {ind} received by querry, is out of limits", 2)
+                        logit(f"index {index} received by querry, is out of limits", 2)
                         message = "--no result--"
 
             except Exception as e:
@@ -233,17 +277,17 @@ def processAdmin(text):
         # 📎 this function removes val condition program from the node with provided index by function name
         # 📎 first argument is node index and second argument is val condition program name that should be removed
         elif text.__contains__("removeValConditionProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\-\_\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\-\_\+]+")
             
             try:
                 index = int(tokens[1])
                 name = tokens[2]
 
                 if index != None:
-                    if index > 0 and index < len(support.factory.getNodes()) + 1:
+                    if support.factory.getNodeByIndex(index) != None:
                         message = script.removeValConditionProgram(index, name)
                     else:
-                        logit(f"index {ind} received by querry, is out of limits", 2)
+                        logit(f"index {index} received by querry, is out of limits", 2)
                         message = "--no result--"
 
             except Exception as e:
@@ -259,7 +303,7 @@ def processAdmin(text):
         # 📎 the last argument is function name. if you don't want function name, you will have to pass None
         # 📎 at the end, with all arguments reformed, function addValConditionProgran from script.py will be called
         elif text.__contains__("addValConditionProgram"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.=><\-\_\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.=!><\-\_\+]+")
             
             try:
                 index = int(tokens[1])
@@ -268,15 +312,16 @@ def processAdmin(text):
                 results = int(tokens[4])
                 aditional = (conditions + results) * 5
             except Exception as e:
-                logit(f"received message {text} in function removeVariable, not properly formated", 2)
+                logit(f"received message {text} in function addValConditionProgram, not properly formated", 2)
                 message = "--message not properly formated--"
                 return message
 
             if tokens.__len__() != 6 + aditional:
-                logit(f"received message {text} in function removeVariable, not properly formated", 2)
+                logit(f"received message {text} in function addValConditionProgram, not properly formated", 2)
                 message = "--message not properly formated--"
                 return message
 
+            validTypes = ("int", "integer", "string", "fun", "float", "var", "value")
             cnd = list()
             res = list()
             last = 0
@@ -286,17 +331,17 @@ def processAdmin(text):
                 if not leftVar.startswith("$"):
                     raise Exception("Condition variable name not properly formated!")
                 leftType = tokens[6 + a]
-                if leftType!= "integer" and leftType!= "string" and leftType!= "fun" and leftType!= "float":
+                if leftType not in validTypes:
                     raise Exception("Condition, variable type not properly formated")
                 rightVar = tokens[7 + a]
                 rightType = tokens[8 + a]
-                if rightType!= "integer" and rightType!= "string" and rightType!= "fun" and rightType!= "float":
+                if rightType not in validTypes:
                     raise Exception("Condition, variable type not properly formated")
                 cs = tokens[9 + a]
-                if cs != "==" and cs != ">" and cs != "<":
+                if cs not in ("==", "!=", ">", "<", ">=", "<="):
                     raise Exception("Condition, sign of comparison not properly formated")
                 last = 9 + a + 1
-                s = statement(leftVar, leftType, rightVar, rightType, cs)
+                s = statement(leftVar, "var" if leftVar.startswith("$") else leftType, rightVar, "var" if rightVar.startswith("$") else rightType, cs)
                 cnd.append(s)
 
             last1 = 0
@@ -306,17 +351,17 @@ def processAdmin(text):
                 if not leftVar.startswith("$"):
                     raise Exception("Result variable name not properly formated!")
                 leftType = tokens[last + 1 + a]
-                if leftType!= "integer" and leftType!= "string" and leftType!= "fun" and leftType!= "float":
+                if leftType not in validTypes:
                     raise Exception("Result, variable type not properly formated")
                 rightVar = tokens[last + 2 + a]
                 rightType = tokens[last + 3 + a]
-                if leftType!= "integer" and leftType!= "string" and leftType!= "fun" and leftType!= "float":
+                if rightType not in validTypes:
                     raise Exception("Result, variable type not properly formated")
                 cs = tokens[last + 4 + a]
                 if cs != "=" and cs != ">" and cs != "<":
                     raise Exception("Result, sign of comparison not properly formated")
                 last1 = last + 5 + a
-                s = statement(leftVar, leftType, rightVar, rightType, cs)
+                s = statement(leftVar, "var" if leftVar.startswith("$") else leftType, rightVar, "var" if rightVar.startswith("$") else rightType, cs)
                 res.append(s)
 
             funName = ""
@@ -328,16 +373,16 @@ def processAdmin(text):
             vc = valCondition(varName, cnd, res, funName= funName)
             
             if index != None:
-                if index > 0 and index < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(index) != None:
                     message = script.addValConditionProgram(index, vc)
                 else:
-                    logit(f"index {ind} received by querry, is out of limits", 2)
+                    logit(f"index {index} received by querry, is out of limits", 2)
                     message = "--no result--"
 
         # 📎 provided arguments are node index and variable name
         # 📎 both arguments are forwarded to removeVariable function in script.py
         elif text.__contains__("removeVariable"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\-\_\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\-\_\+]+")
             if tokens.__len__() != 3:
                 logit(f"received message {text} in function removeVariable, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -345,47 +390,39 @@ def processAdmin(text):
             index = int(tokens[1])
             varName = str(tokens[2])
             if index != None:
-                if index > 0 and index < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(index) != None:
                     message = script.removeVariable(index, varName)
                 else:
-                    logit(f"index {ind} received by querry, is out of limits", 2)
+                    logit(f"index {index} received by querry, is out of limits", 2)
                     message = "--no result--"
 
         # 📎 provided arguments are node index, variable name, boolean that defines whether variable is global or not
         # 📎 variable type and variable value
         # 📎 both arguments are forwarded to createVariable function in script.py
         elif text.__contains__("createVariable"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,\-\_\+]+", text)
-            tmp = list()
-            for el in tokens:
-                if el!= "\"":
-                    if not el.__contains__("$"):
-                        tmp.append(el.replace(",", ""))   #the purpose is to allow multiple elements of an array(.kst)
-                    else:                                 #but to remove comma from all other elements of tokens
-                        tmp.append(el)
-            tokens = tmp
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\"\'\,\-\_\+]+")
             if tokens.__len__() != 6:
                 logit(f"received message {text} in function createVariable, not properly formated", 2)
                 message = "--message not properly formated--"
                 return message
             index = int(tokens[1])
-            varName = str(tokens[2]).replace(",", "")     #the rason is that in previous loop comma can stay with variable name
+            varName = str(tokens[2]).replace(",", "")
             globalVar = False
             if tokens[3] == "True" or tokens[3]=="true":
                 globalVar = True
             varType = str(tokens[4])
             varValue = str(tokens[5])
             if index != None:
-                if index > 0 and index < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(index) != None:
                     message = script.createVariable(index, varName, globalVar, varType, varValue)
                 else:
-                    logit(f"index {ind} received by querry, is out of limits", 2)
+                    logit(f"index {index} received by querry, is out of limits", 2)
                     message = "--no result--"
 
         # 📎 this command requests three arguments, node index, list name and index of value to be selected
         # 📎 all arguments are forwarded to changeListValue function in script.py
         elif text.__contains__("changeListValue"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\-\_\+]+")
             if tokens.__len__() != 4:
                 logit(f"received message {text} in function changeListValue, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -394,7 +431,7 @@ def processAdmin(text):
             if ind != None:
                 listName = tokens[2]
                 listValue = tokens[3]
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = script.changeListValue(ind, listName, listValue)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -403,7 +440,7 @@ def processAdmin(text):
         # 📎 this command requests three arguments, node index and trigger name, and a new value to be set
         # 📎 all of arguments are forwarded to changeTriggerValue function in script.py
         elif text.__contains__("changeTriggerValue"):
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\-\_\+]+", text)
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\"\'\-\_\+]+")
             if tokens.__len__() != 4:
                 logit(f"received message {text} in function changeTriggerValue, not properly formated", 2)
                 message = "--message not properly formated--"
@@ -412,7 +449,7 @@ def processAdmin(text):
             if ind != None:
                 triggerName = tokens[2]
                 triggerValue = tokens[3]
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = script.changeTriggerValue(ind, triggerName, triggerValue)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)
@@ -422,24 +459,16 @@ def processAdmin(text):
         # 📎 first argument is index of the node, second is variable name and third is variable value
         # 📎 all of 3 arguments are sent to function writeVar in script.py            
         elif text.__contains__("writeVar("): 
-            tokens = re.findall(r"[\$a-z0-9A-Z\.\"\'\,\-\_\+]+", text)
-            tmp = list()
-            for el in tokens:
-                if el!= "\"":
-                    if not el.__contains__("$"):
-                        tmp.append(el.replace(",", ""))   #the purpose is to allow multiple elements of an array(.kst)
-                    else:                                 #but to remove comma from all other elements of tokens
-                        tmp.append(el)
-            tokens = tmp
+            tokens = _extractAdminTokens(text, r"[\$a-z0-9A-Z\.\"\'\,\-\_\+]+")
             if tokens.__len__() != 4:
                 logit(f"received message {text} in function writeVar, not properly formated", 2)
                 message = "--message not properly formated--"
                 return message
             ind = int(tokens[1])
             if ind != None:
-                vn = tokens[2].replace(",", "")          #removing comma from variable name
+                vn = tokens[2].replace(",", "")
                 vv = tokens[3]
-                if ind > 0 and ind < len(support.factory.getNodes()) + 1:
+                if support.factory.getNodeByIndex(ind) != None:
                     message = script.writeVar(ind, vn, vv)
                 else:
                     logit(f"index {ind} received by querry, is out of limits", 2)

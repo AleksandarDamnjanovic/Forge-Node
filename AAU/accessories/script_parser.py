@@ -50,27 +50,27 @@ def parseNodes(factory, __nodes, __globalVars):
             nameIndexType = nameIndexType[nameIndexType.index(unitName)+ len(unitName):len(nameIndexType)]
             unitType = re.search("(MASTER)|(SLAVE)|(SHUNT)|(BRIDGE)", nameIndexType)[0]
             slaveOf = None
-            masterOf = None
+            masterOf = list()
 
-            if unitType == "SHUNT" or unitType == "BRIDGE" or unitType == "SLAVE":
-                b = str(unit).index("<meta>")
-                e = str(unit).index("</meta>")
-                meta = unit[b+6:e]
-                mm = meta.split("\n")
-                for m in mm:
-                    m = m.replace("  ", "")
-                    if m != "":
-                        if m.startswith("master"):
-                            text = re.findall("[0-9]+", m)
-                            slaveOf = int(text[0])
-                        elif m.startswith("slaves"):
-                            text = re.findall("[0-9]+", m)
-                            for t in text:
-                                if masterOf == None:
-                                    masterOf = list()
-                                    masterOf.append(int(t))
-                                else:
-                                    masterOf.append(int(t))
+            if unitType == "SHUNT" or unitType == "BRIDGE" or unitType == "SLAVE" or str(unit).__contains__("<meta>"):
+                if str(unit).__contains__("<meta>") and str(unit).__contains__("</meta>"):
+                    b = str(unit).index("<meta>")
+                    e = str(unit).index("</meta>")
+                    meta = unit[b+6:e]
+                    mm = meta.split("\n")
+                    for m in mm:
+                        m = m.strip()
+                        if m != "":
+                            if m.startswith("master"):
+                                text = re.findall("[0-9]+", m)
+                                if len(text) > 0:
+                                    slaveOf = int(text[0])
+                            elif m.startswith("slaves"):
+                                text = re.findall("[0-9]+", m)
+                                for t in text:
+                                    val = int(t)
+                                    if val not in masterOf:
+                                        masterOf.append(val)
 
         except Exception as e:
             logit("Script parsing error!!! Headers or meta, not formed properly!!!", 1)
@@ -182,16 +182,9 @@ def parseVariables(line):
     varType= None
     varName= None
     varVal= None
+    rawLine = line
     line = line.replace("=", " ")
-    tokens = line.split(" ")
-    counter = 0
-
-    for i in tokens:
-        if i == "":
-            counter += 1
-
-    for i in range(0, counter):
-        tokens.remove("")
+    tokens = [t for t in line.split(" ") if t != ""]
 
     varType= tokens[0]
     offset = 0
@@ -203,11 +196,18 @@ def parseVariables(line):
     varName= tokens[1 + offset]
 
     if varType != "array" and varType!= "global array":
-        varVal= tokens[2 + offset] if len(tokens) > (2 + offset) else ""
+        if varType == "string" or varType == "global string":
+            qMatch = re.search(r"\"([^\"]*)\"", rawLine)
+            if qMatch != None:
+                varVal = qMatch.group(1)
+            else:
+                varVal = tokens[2 + offset] if len(tokens) > (2 + offset) else ""
+        else:
+            varVal= tokens[2 + offset] if len(tokens) > (2 + offset) else ""
     else:
-        ind1 = line.index("[")
-        ind2 = line.index("]")
-        varVal = line[ind1:ind2+1]
+        ind1 = rawLine.index("[")
+        ind2 = rawLine.index("]")
+        varVal = rawLine[ind1:ind2+1]
 
     if varType=="string" or varType=="global string":
         if varVal.__contains__("\""):
@@ -218,7 +218,7 @@ def parseVariables(line):
     return varType, varName, varVal 
 
 def parseSensor(text):
-    name = re.search("\"[a-zA-Z0-9\\s\\.\\,]+\"", text)[0]
+    name = re.search(r"\"[^\"]+\"", text)[0]
     name= name.replace("\"","")
     idx1 = str(text).index(",")
     idx2 = str(text).index(",", idx1+1)
@@ -266,7 +266,7 @@ def parseElList(text):
     index = int(index)
     text = text[idx1 :len(text)]
      
-    variables = re.findall("\\$[a-zA-Z0-9\\_]+", text)
+    variables = re.findall("\\$[a-zA-Z0-9\\_\\$]+", text)
     listValues = variables[0]
     listNames = variables[1]
     state = variables[2]
@@ -284,7 +284,7 @@ def parseTriggerOrSwitch(text, type= 0):
     index = str(text)[start+1:end]
     index = str(index).replace(" ", "")
     index = int(index)
-    variables = re.findall("\\$[\\w]+[\\d]*", text)
+    variables = re.findall("\\$[a-zA-Z0-9\\_\\$]+", text)
     value = variables[0]
     force = variables[1]
 
@@ -301,7 +301,7 @@ def parseValCondition(text):
     funName= None
     
     if fn==True:
-        funName = re.search( "\\$[a-zA-Z0-9]+", text)
+        funName = re.search( "\\$[a-zA-Z0-9\\_]+", text)
         if funName != None:
             funName = funName[0]    
     
@@ -335,10 +335,10 @@ def parseValCondition(text):
 
 def parseStatements(parsing, conditions):
     for l in parsing:
-        condition = re.search("\\$[a-zA-Z0-9]+[\\s]*[=><]+[\\s]*(\\$[a-zA-Z0-9]+|[0-9\\.]+|[\"a-zA-Z0-9]+)", l)
+        condition = re.search("\\$[a-zA-Z0-9\\_\\$]+[\\s]*[=!><]+[\\s]*(\\$[a-zA-Z0-9\\_\\$]+|[0-9\\.\\-]+|\"[^\"]*\"|[a-zA-Z0-9\\_\\.\\-]+)", l)
         if condition != None:
             condition = condition[0]
-            cs = re.search("[<>=]+", condition)[0]
+            cs = re.search("[!<>=]+", condition)[0]
             id = condition.index(cs)
             left = condition[0:id]
             if left.__contains__(" "):
@@ -361,7 +361,7 @@ def parseSerial(text, vars):
     funName= None
 
     if fn==True:
-        funName = re.search( "\\$[a-zA-Z0-9]+", text)
+        funName = re.search( "\\$[a-zA-Z0-9\\_]+", text)
         if funName != None:
             funName = funName[0]    
     
@@ -380,11 +380,11 @@ def parseSerial(text, vars):
     name = None
     
     if value.__contains__("\""):
-        name = re.search("\"[a-zA-Z0-9\\s]+\"", value)
+        name = re.search(r"\"[^\"]+\"", value)
         if name != None:
             name = name[0].replace("\"", "")
     else:
-        name = re.search("\\$[a-zA-Z0-9]+", value)
+        name = re.search("\\$[a-zA-Z0-9\\_]+", value)
         if name != None:
             name = name[0]
     
@@ -397,21 +397,21 @@ def parseSerial(text, vars):
     
     ind1 = text.index(switches) + len(switches)
     text = text[ind1: len(text)]
-    swe = re.search("([\\d]+)|(\\$[a-zA-Z0-9]+)", text)
+    swe = re.search("([\\d]+)|(\\$[a-zA-Z0-9\\_]+)", text)
     
     if swe != None:
         swe = swe[0]    
     
     ind1 = text.index(swe) + len(swe)
     text = text[ind1: len(text)]    
-    stime = re.search("([\\d]+)|(\\$[a-zA-Z0-9]+)", text)
+    stime = re.search("([\\d]+)|(\\$[a-zA-Z0-9\\_]+)", text)
     
     if stime != None:
         stime = stime[0]    
     
     ind1 = text.index(stime) + len(stime)
     text = text[ind1: len(text)]    
-    lastIndex = re.search("([\\d]+)|(\\$[a-zA-Z0-9]+)", text)
+    lastIndex = re.search("([\\d]+)|(\\$[a-zA-Z0-9\\_]+)", text)
     
     if lastIndex != None:
         lastIndex = lastIndex[0]    
@@ -419,19 +419,8 @@ def parseSerial(text, vars):
     return serial(name, switches, swe, stime, lastIndex, funName)  
 
 def parseTimeLims(text):
-    text = text[8:len(text)]
-    fun = re.search("\\$[a-zA-Z0-9]+", text)
-    
-    if fun != None:
-        fun = fun[0]    
-    
-    text = text[len(fun):len(text)]
-    startEnd = re.findall("(\\$[\\w\\d]+)", text)
-    start = None
-    end = None
-
-    if startEnd != None:
-        start = startEnd[0]
-        end = startEnd[1]
-    
+    allVars = re.findall(r"\$[a-zA-Z0-9_]+", text)
+    fun = allVars[0] if len(allVars) > 0 else None
+    start = allVars[1] if len(allVars) > 1 else None
+    end = allVars[2] if len(allVars) > 2 else None
     return timeLim(fun, start, end)

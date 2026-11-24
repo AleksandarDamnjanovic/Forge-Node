@@ -1010,6 +1010,15 @@ function processIncomingMqttMessage(topic, payload, direction = "in") {
       const nIdx = parseInt(parts[1], 10);
       const nodeObj = state.nodes.find((n) => n.index === nIdx) || targetNode;
 
+      if (nodeObj && nodeObj.topic && nodeObj.topic !== topic) {
+        if (!state.topicStats[nodeObj.topic]) {
+          state.topicStats[nodeObj.topic] = { count: 0, lastPayload: "—", lastTimestamp: "—" };
+        }
+        state.topicStats[nodeObj.topic].count += 1;
+        state.topicStats[nodeObj.topic].lastPayload = tok;
+        state.topicStats[nodeObj.topic].lastTimestamp = nowStr;
+      }
+
       if (cmd === "Cq") {
         decodedSummaries.push(`Node #${nIdx} Update Request (Cq)`);
         continue;

@@ -27,18 +27,20 @@ def rerun():
     while support.START == True:
         time.sleep(0.1)
 
-    support.START = True
-    support.factory.clearMessages()
-    script.refresh()
-    support.factory.packMessages()
-    support.factory.calculateFactoryEpoh()
-    epoh = support.factory.getFactoryEpoh()
-    sendMessages()
-    
-    support.START = False
-    logit(f"epoh until next rerun: {epoh}", 0)
+    with support.rerunLock:
+        support.START = True
+        try:
+            support.factory.clearMessages()
+            script.refresh()
+            support.factory.packMessages()
+            support.factory.calculateFactoryEpoh()
+            epoh = support.factory.getFactoryEpoh()
+            sendMessages()
+        finally:
+            support.START = False
+        logit(f"epoh until next rerun: {epoh}", 0)
 
-    return epoh
+        return epoh
         
 # 📎 if we get some connection error, we are going to log warning
 def on_connect(client, data, flags, returnCode):
@@ -58,8 +60,9 @@ def on_message(client, data, message):
             if mess != "":
                 while support.START == True:
                     time.sleep(0.2)
-                client= clients.__getitem__(0)
-                client.publish("admin", mess)
+                client= clients.get(0)
+                if client != None:
+                    client.publish("admin", mess)
         else:
             if text.__contains__("\r"):
                 text= str(text).replace("\r", " ")
@@ -67,25 +70,31 @@ def on_message(client, data, message):
             if text.__contains__("\n"):
                 text= str(text).replace("\n", " ")
 
-            if text.__contains__("  "):
+            while text.__contains__("  "):
                 text= str(text).replace("  ", " ")
 
-            if text.__contains__(" "):
+            text = str(text).strip()
+            if text != "":
                 __lines= text.split(" ")
                 __lines= list(filter(None, __lines))
                 __tokens= text.split("_")
                 __tokens= list(filter(None, __tokens))
 
-                if __tokens[0]=="I" or __tokens[0]== "Q":
+                if len(__tokens) == 0 or __tokens[0]=="I" or __tokens[0]== "Q":
                     return
 
-                __result = False
+                __result = True
+                demand = -1
                 for l in __lines:
-                    valid, demand = support.factory.processConfirmation(l)
+                    res = support.factory.processConfirmation(l)
+                    if res == None:
+                        continue
+                    valid, d = res
                     if valid == False:
                         __result= False
-                #        break
-                if __result == False and demand != -1:
+                    if d != -1:
+                        demand = d
+                if demand != -1:
                     logit(f"update called by sensor on node: {demand}", 0)
                     rerun()
 
@@ -101,7 +110,11 @@ def sendMessages():
             message = support.factory.getMessagesByIndex(ind)
             if len(message)>0:
                 message = message[0]
-            client= clients.__getitem__(ind)
+            else:
+                continue
+            client= clients.get(ind)
+            if client == None:
+                continue
             try:
                 client.publish(n.getTopic(), message)
             except Exception as e:
@@ -126,9 +139,24 @@ if __name__ == "__main__":
     script.buildAll()
     script.refresh()
 
-    clients = list()
-    num = len(support.nodes) + 1
-    for i in range(0, num):
+    clients = dict()
+
+    adminClient = mqttClient.Client()
+    adminClient.on_connect= on_connect
+    adminClient.on_message= on_message
+    context = ssl._create_unverified_context()
+    context.load_verify_locations(cafile=support.certificate)
+    adminClient.tls_set_context(context)
+    adminClient.tls_insecure_set(True)
+    adminClient.username_pw_set(support.user, support.password)
+    clients[0] = adminClient
+    th = support.communication("admin", adminClient)
+    th.start()
+
+    for n in support.nodes:
+        if n.getType() == "BRIDGE" or n.getType() == "SLAVE":
+            continue
+        ind = n.getNodeIndex()
         client = mqttClient.Client()
         client.on_connect= on_connect
         client.on_message= on_message
@@ -137,16 +165,9 @@ if __name__ == "__main__":
         client.tls_set_context(context)
         client.tls_insecure_set(True)
         client.username_pw_set(support.user, support.password)
-        clients.append(client)
-
-    for i in range(0, num):
-        th = None
-        if i == 0:
-            th = support.communication("admin", clients.__getitem__(i))
-        else:
-            th = support.communication(support.factory.getNodeByIndex(i).getTopic(), clients.__getitem__(i))
-        if th != None:
-            th.start()
+        clients[ind] = client
+        th = support.communication(n.getTopic(), client)
+        th.start()
 
     time.sleep(2)
     run = running()

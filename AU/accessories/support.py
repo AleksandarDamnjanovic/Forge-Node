@@ -50,7 +50,7 @@ for i in range(len(configuration)):
     if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
         value = value[1:-1]
     match name:
-        case "ca":
+        case "ca" | "certificate":
             certificate = value
         case "serverKey":
             serverKey = value
@@ -67,6 +67,25 @@ for i in range(len(configuration)):
             user = value
         case "password":
             password = value
+
+def _resolve_cert_path(raw_path: str) -> str:
+    if not raw_path:
+        return ""
+    p = Path(raw_path)
+    if p.is_file():
+        return str(p.resolve())
+    for base in (_CONF_PATH.parent, _AU_DIR, _PROJECT_ROOT):
+        candidate = (base / raw_path).resolve()
+        if candidate.is_file():
+            return str(candidate)
+    shared_candidate = (_PROJECT_ROOT / "SHARED" / p.name).resolve()
+    if shared_candidate.is_file():
+        return str(shared_candidate)
+    return raw_path
+
+certificate = _resolve_cert_path(certificate)
+serverKey = _resolve_cert_path(serverKey)
+serverCertificate = _resolve_cert_path(serverCertificate)
 
 if(certificate == "" or serverKey == "" or serverCertificate == "" or address == "" or port <= 0 or user == "" or password == ""):
     print("Configuration file is not valid", file=sys.stderr)
@@ -97,10 +116,8 @@ class communication(threading.Thread):
 
         self.__client.subscribe(self.__topic)
         print(f"{self.__topic} ... connected")
+        self.__client.loop_start()
         while(not kill):
-            self.__client.loop_start()
-            if kill:
-                self.__client.disconnect()
-                break
-            time.sleep(1)
-            self.__client.loop_stop()
+            time.sleep(0.2)
+        self.__client.loop_stop()
+        self.__client.disconnect()

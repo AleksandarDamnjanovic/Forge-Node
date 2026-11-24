@@ -44,7 +44,7 @@ def _resolve_project_root() -> Path:
         if cur.parent == cur:
             break
         cur = cur.parent
-    return Path("/home/irishpub/Programming/Forge Node")
+    return Path.cwd().resolve()
 
 
 PROJECT_ROOT = _resolve_project_root()
@@ -517,10 +517,11 @@ class ReusableThreadingHTTPServer(ThreadingHTTPServer):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
-    server = ReusableThreadingHTTPServer(("0.0.0.0", port), ForgeNodeRequestHandler)
+    host = os.environ.get("FN_BRIDGE_HOST", "127.0.0.1")
+    server = ReusableThreadingHTTPServer((host, port), ForgeNodeRequestHandler)
     paho_ver = getattr(mqttClient, "__version__", "loaded") if mqttClient else "NOT FOUND"
     print(
-        f"Forge Node MQTT Monitor Bridge ready on http://127.0.0.1:{port}/mqtt-monitor/index.html (paho-mqtt: {paho_ver})",
+        f"Forge Node MQTT Monitor Bridge ready on http://{host}:{port}/mqtt-monitor/index.html (paho-mqtt: {paho_ver})",
         flush=True,
     )
 

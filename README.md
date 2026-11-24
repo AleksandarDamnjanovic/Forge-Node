@@ -3,18 +3,10 @@
 # Forge Node
 
 ## News
-- As of September 12, c wrapper is done and tested both on control and client side.
-- As of September 15, java wrapper is started with development, mainly for the purpose of Android devices integration.
-- As of September 20, java wrapper is done for split system.
-- As of September 27. java wrapper is done for main system. Example is given in main class of this sub-project.
-- As of October 6. implementation of SHUNT, BRIDGE and SLAVE nodes is done. Next step is to update Nodes, both for micro-controllers and wrappers to support this functionality.
-- As of October 14. SHUNT, BRIDGE and SLAVE functionality is available for Java wrapper.
+- since November 22. Forge Node is ready for testing.
 
 ## Video tutorials
-##### In first 3 videos old name for this project was still in use
-1. [Basic explanations](https://youtu.be/n6Ak4GIscVg)
-2. [Installation tutorial for version 0.3.0](https://youtu.be/pGiK0WKn_74)
-3. [AI integration with Hermes Agent and LM Studio local model via Telegram channel](https://youtu.be/Vrgk4hY9c7Y)
+##### Soon entire list of tutorials will be expected in here
 
 ## Intro
 Forge Node is built with idea for more abstract approach to building of smart home and other smart systems. When building smart home, engineer usually have to worry about both electric, electronics and computer elements of the system. With this solution, after system is set up from hardware perspective, everything else is going to be dealt with from .fn script. You can consider .fn script as programming language for your smart home for the purpose that, you will not have to worry, any more, about voltage and pins, but about switches, transmitters and sensors, meaning script primitives which define your system.
@@ -52,19 +44,7 @@ There are multiple types of nodes, although at the moment only one type is imple
 
 ## How to install it
 
-First install mosquitto server.
-Use helper scripts if you are using Linux:
-1. **createCerts.sh** creates self signed certificate and deploys them to appropriate directories across the project.
-2. **removeCerts.sh** removes all of, by previous command, created certs
-3. **setupMosquitto.sh**(needs sudo) sets up mosquitto server after installation. This script needs one argument; mosquitto broker's IP address.
-4. **removeOldMosquittoConf.sh**(needs sudo) removes all done bu setupMosquitto.sh.
-Make sure that you have all of settings in AAU/support.py set correctly.
-
-Place script .fn in directory with path that you defined in AAU/support.py and run the app with python3 ./base.py. For any serious usage, consider turning this app into a service; with systemd on Linux or service on Windows.
-On the side of nodes, make sure that all of data into node.hpp is set properly and upload the code to your micro controller.
-If you are using mqtt explorer, ideally you should be able to see communication between the node and AAU right away.
-
-Usage is explained in section [AU](#au).
+Navigata into project root directory and use docker to create image with command `docker build -t forge-node:latest .` Then first check docker-compose.yml for custom settings. After that is done `docker compose up -d` in order to start docker container. Interface is exposed on port 10011 and default credentials are admin1 password.
 
 ## How communication works
 On every 10 seconds, by default, node sends its own updated state to the mosqutitto server on topic with the same name as node itself. It sends confirmations for all of its sensors and switches split by space. Message looks like: 
