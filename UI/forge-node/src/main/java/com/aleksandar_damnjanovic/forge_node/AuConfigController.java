@@ -1,5 +1,6 @@
 package com.aleksandar_damnjanovic.forge_node;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -10,11 +11,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,16 +35,137 @@ public class AuConfigController {
 
 	private static final int DEFAULT_AU_PORT = 10010;
 	private static final String AU_CONF_REL_PATH = "AAU/script/au configuration/au-configuration.conf";
+	private static final String API_KEY_REL_PATH = "AAU/script/api/api.txt";
+	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	private volatile boolean exposeAu;
 	private volatile int auPort = DEFAULT_AU_PORT;
+	private volatile int serverPort = 10001;
+	private volatile String apiKey = "";
 	private Process localAuProcess;
 
 	public AuConfigController(
-			@Value("${expose-au:false}") String exposeAuValue
+			@Value("${expose-au:false}") String exposeAuValue,
+			@Value("${server.port:10001}") int serverPort
 	) {
 		String ea = exposeAuValue == null ? "false" : exposeAuValue.trim();
 		this.exposeAu = "true".equalsIgnoreCase(ea) || "1".equals(ea) || "yes".equalsIgnoreCase(ea);
+		this.serverPort = serverPort > 0 ? serverPort : 10001;
+	}
+
+	@PostConstruct
+	public synchronized void initApiKeyOnStartup() {
+		ensureOrLoadApiKey();
+	}
+
+	private Path resolveApiKeyFilePath() {
+		return resolveProjectRoot().resolve("AAU").resolve("script").resolve("api").resolve("api.txt");
+	}
+
+	private String generateRandomApiKey() {
+		byte[] bytes = new byte[24];
+		SECURE_RANDOM.nextBytes(bytes);
+		return "fn_" + HexFormat.of().formatHex(bytes);
+	}
+
+	public synchronized String ensureOrLoadApiKey() {
+		Path apiFile = resolveApiKeyFilePath();
+		try {
+			if (Files.isRegularFile(apiFile)) {
+				String existing = Files.readString(apiFile, StandardCharsets.UTF_8).trim();
+				if (!existing.isEmpty()) {
+					this.apiKey = existing;
+					syncForgeNodeSkillConfiguration(this.apiKey);
+					return this.apiKey;
+				}
+			}
+			String created = generateRandomApiKey();
+			Files.createDirectories(apiFile.getParent());
+			Files.writeString(apiFile, created + "\n", StandardCharsets.UTF_8);
+			this.apiKey = created;
+			syncForgeNodeSkillConfiguration(this.apiKey);
+			return this.apiKey;
+		} catch (Exception e) {
+			if (this.apiKey == null || this.apiKey.isEmpty()) {
+				this.apiKey = generateRandomApiKey();
+			}
+			return this.apiKey;
+		}
+	}
+
+	public synchronized String regenerateApiKey() throws Exception {
+		Path apiFile = resolveApiKeyFilePath();
+		String created = generateRandomApiKey();
+		Files.createDirectories(apiFile.getParent());
+		Files.writeString(apiFile, created + "\n", StandardCharsets.UTF_8);
+		this.apiKey = created;
+		syncForgeNodeSkillConfiguration(this.apiKey);
+		return this.apiKey;
+	}
+
+	public String getApiKey() {
+		if (this.apiKey == null || this.apiKey.isEmpty()) {
+			return ensureOrLoadApiKey();
+		}
+		return this.apiKey;
+	}
+
+	public boolean isValidApiKey(String candidate) {
+		if (candidate == null || candidate.isBlank()) {
+			return false;
+		}
+		String expected = getApiKey();
+		if (expected == null || expected.isEmpty()) {
+			return false;
+		}
+		return MessageDigest.isEqual(
+				expected.getBytes(StandardCharsets.UTF_8),
+				candidate.trim().getBytes(StandardCharsets.UTF_8)
+		);
+	}
+
+	private void syncForgeNodeSkillConfiguration(String currentApiKey) {
+		if (currentApiKey == null || currentApiKey.isEmpty()) {
+			return;
+		}
+		Path projectRoot = resolveProjectRoot();
+		Path skillDir = projectRoot.resolve("forge-node-skill");
+		if (!Files.isDirectory(skillDir)) {
+			// Modular setup: forge-node-skill is not present in project root, do not write config in it
+			return;
+		}
+		Path scriptsDir = skillDir.resolve("scripts");
+		if (!Files.isDirectory(scriptsDir)) {
+			return;
+		}
+		Path confPath = scriptsDir.resolve("configuration.conf");
+		String url = "http://127.0.0.1:" + this.serverPort;
+		if (Files.isRegularFile(confPath)) {
+			try {
+				for (String raw : Files.readAllLines(confPath, StandardCharsets.UTF_8)) {
+					String line = raw.trim();
+					if (line.isEmpty() || line.startsWith("#") || !line.contains("=")) {
+						continue;
+					}
+					int eq = line.indexOf('=');
+					String k = line.substring(0, eq).trim();
+					String v = line.substring(eq + 1).trim();
+					if (v.length() >= 2 && v.startsWith("\"") && v.endsWith("\"")) {
+						v = v.substring(1, v.length() - 1);
+					}
+					if ("url".equals(k) && !v.isBlank()) {
+						url = v.trim();
+					}
+				}
+			} catch (Exception ignored) {
+			}
+		}
+		String content = "url = \"" + escapeConf(url) + "\"\n"
+				+ "apiKey = \"" + escapeConf(currentApiKey) + "\"\n";
+		try {
+			Files.writeString(confPath, content, StandardCharsets.UTF_8);
+		} catch (Exception ignored) {
+		}
 	}
 
 	private Path resolveProjectRoot() {
@@ -102,7 +232,11 @@ public class AuConfigController {
 
 	private void syncForgeNodeSkillPort(int port) {
 		Path projectRoot = resolveProjectRoot();
-		Path skillPath = projectRoot.resolve("forge-node-skill/SKILL.md");
+		Path skillDir = projectRoot.resolve("forge-node-skill");
+		if (!Files.isDirectory(skillDir)) {
+			return;
+		}
+		Path skillPath = skillDir.resolve("SKILL.md");
 		if (Files.isRegularFile(skillPath)) {
 			try {
 				String content = Files.readString(skillPath, StandardCharsets.UTF_8);
@@ -115,20 +249,7 @@ public class AuConfigController {
 			} catch (Exception ignored) {
 			}
 		}
-		Path clientPath = projectRoot.resolve("forge-node-skill/scripts/client.py");
-		if (Files.isRegularFile(clientPath)) {
-			try {
-				String content = Files.readString(clientPath, StandardCharsets.UTF_8);
-				String updated = content.replaceAll(
-						"FORGE_NODE_PORT\", \"[0-9]{4,5}\"",
-						"FORGE_NODE_PORT\", \"" + port + "\""
-				);
-				if (!updated.equals(content)) {
-					Files.writeString(clientPath, updated, StandardCharsets.UTF_8);
-				}
-			} catch (Exception ignored) {
-			}
-		}
+		syncForgeNodeSkillConfiguration(this.apiKey);
 	}
 
 	private Path resolveAuFileWithinContainer(String rawPath) {
@@ -300,7 +421,90 @@ public class AuConfigController {
 		resp.put("auPort", auPort);
 		resp.put("auConfigured", isAuConfigReady());
 		resp.put("auConfigPath", AU_CONF_REL_PATH);
+		resp.put("apiKey", getApiKey());
+		resp.put("apiKeyPath", API_KEY_REL_PATH);
 		return ResponseEntity.ok(resp);
+	}
+
+	@GetMapping(value = "/api-key", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Map<String, Object>> getApiKeyEndpoint() {
+		String key = getApiKey();
+		return ResponseEntity.ok(Map.of(
+				"ok", true,
+				"apiKey", key,
+				"path", API_KEY_REL_PATH
+		));
+	}
+
+	@PostMapping(value = "/api-key/new", produces = MediaType.APPLICATION_JSON_VALUE)
+	public synchronized ResponseEntity<Map<String, Object>> createNewApiKeyEndpoint() {
+		try {
+			String key = regenerateApiKey();
+			return ResponseEntity.ok(Map.of(
+					"ok", true,
+					"apiKey", key,
+					"path", API_KEY_REL_PATH
+			));
+		} catch (Exception e) {
+			return ResponseEntity.status(500).body(Map.of(
+					"ok", false,
+					"error", "Failed to generate new API key: " + e.getMessage()
+			));
+		}
+	}
+
+	@PostMapping(value = "/command", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Map<String, Object>> executeAuCommand(@RequestBody(required = false) Map<String, Object> body) {
+		if (!this.exposeAu) {
+			return ResponseEntity.status(403).body(Map.of(
+					"ok", false,
+					"error", "Expose AU is disabled on this Forge Node instance."
+			));
+		}
+		if (!isLocalAuRunning()) {
+			return ResponseEntity.status(503).body(Map.of(
+					"ok", false,
+					"error", "AU server is not currently running. Start AU in the Forge Node Dashboard first."
+			));
+		}
+		String command = body == null ? "" : stringVal(body.get("command"));
+		if (command.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of(
+					"ok", false,
+					"error", "Missing 'command' in request body."
+			));
+		}
+		try (Socket socket = new Socket()) {
+			socket.connect(new InetSocketAddress("127.0.0.1", this.auPort), 5000);
+			socket.setSoTimeout(15000);
+			OutputStream out = socket.getOutputStream();
+			out.write(command.getBytes(StandardCharsets.UTF_8));
+			out.flush();
+
+			InputStream in = socket.getInputStream();
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			byte[] chunk = new byte[4096];
+			int read;
+			while ((read = in.read(chunk)) != -1) {
+				buffer.write(chunk, 0, read);
+			}
+			String respText = buffer.toString(StandardCharsets.UTF_8).trim();
+			if (respText.isEmpty()) {
+				return ResponseEntity.status(502).body(Map.of(
+						"ok", false,
+						"error", "Empty response received from AU server."
+				));
+			}
+			return ResponseEntity.ok(Map.of(
+					"ok", true,
+					"response", respText
+			));
+		} catch (Exception e) {
+			return ResponseEntity.status(502).body(Map.of(
+					"ok", false,
+					"error", "Failed to communicate with local AU server on 127.0.0.1:" + this.auPort + " (" + e.getMessage() + ")"
+			));
+		}
 	}
 
 	@PostMapping(value = "/settings", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -537,7 +741,7 @@ public class AuConfigController {
 			syncForgeNodeSkillPort(requestedPort);
 
 			Path startupLog = Files.createTempFile("forge-node-au-", ".log");
-			ProcessBuilder pb = new ProcessBuilder("python3", "au.py", "tcp", String.valueOf(requestedPort));
+			ProcessBuilder pb = new ProcessBuilder("python3", "au.py", "tcp", String.valueOf(requestedPort), "127.0.0.1");
 			pb.directory(auDir.toFile());
 			pb.environment().remove("FN_ADMIN_USER");
 			pb.environment().remove("FN_ADMIN_PASSWORD");

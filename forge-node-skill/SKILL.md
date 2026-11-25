@@ -188,14 +188,18 @@ When agent has to create variable, this **naming convention** must be followed. 
 
 ## How to initialize service
 1. Use `client.py` from Script PATH with python like `python PATH/client.py`.
-   - **Connection address and port rules:**
-     - By default, `client.py` connects to `127.0.0.1` and default port number 10010 (synced automatically when AU port is changed in Forge Node).
-     - If the user **does not** mention a custom address or port, you may omit them or pass the default port, e.g. `python PATH/client.py 10010 read-variables 1` or `python PATH/client.py read-variables 1`.
-     - If the user **explicitly provides** a different address/IP/hostname and/or port number (for example: *"connect to 192.168.1.50 on 10020"* or *"target forge node at 10.0.0.15"*), you **must** pass `--host <address>` and/or `--port <port>` before the AU command:
-       - Custom host + custom port: `python PATH/client.py --host 192.168.1.50 --port 10020 read-variables 1`
-       - Custom host only (uses default port number 10010): `python PATH/client.py --host 192.168.1.50 read-variables 1`
-       - Custom port only (uses `127.0.0.1`): `python PATH/client.py --port 10020 read-variables 1`
-   - Keep using that same host/port override for all subsequent `client.py` calls during the user's request.
+   - **Connection URL and API Key rules (`scripts/configuration.conf`):**
+     - By default, `client.py` reads the target Forge Node URL (`url`) and API key (`apiKey`) automatically from `PATH/configuration.conf` located in the same `scripts/` directory as `client.py`:
+       ```ini
+       url = "http://127.0.0.1:10001"
+       apiKey = "fn_..."
+       ```
+     - When `forge-node-skill` is located in the Forge Node project root directory, Forge Node automatically syncs `configuration.conf` with the active API key from `AAU/script/api/api.txt`. In a modular or remote setup, the user can click **Copy API** in the Forge Node Dashboard's `Expose AU` section and paste the key and URL into `PATH/configuration.conf`.
+     - If the user **does not** mention a custom URL or API key, simply run `python PATH/client.py <command> [args...]`, e.g. `python PATH/client.py read-variables 1`.
+     - If the user **explicitly provides** a different URL, host/port, or API key in chat, you can pass `--url <url>` (or `--host <address>` / `--port <port>`) and/or `--api-key <key>` before the command:
+       - Custom URL + API key: `python PATH/client.py --url https://forge.example.com --api-key fn_... read-variables 1`
+       - Custom URL only (uses `apiKey` from `configuration.conf`): `python PATH/client.py --url http://192.168.1.50:10001 read-variables 1`
+   - Keep using that same override for all subsequent `client.py` calls during the user's request.
 2. get number of nodes from entire system by executing command `read-node-count`. keep in mind that nodes are enumerated from 1 on ...
 3. for every node index execute command `read-header` with node index as argument in order to get header text. Structure of header text is better explained in skill documentation `header.md`. The most important piece of data for the beginning is the first argument of the header function. That piece of data will be called `Location`
 4. memorize all of node names(Locations) and corresponding indexes. those information are necessary for all other processes.

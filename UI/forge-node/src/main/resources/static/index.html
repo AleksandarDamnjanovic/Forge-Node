@@ -473,10 +473,10 @@
         <div style="display:flex;flex-direction:column;gap:8px;">
           <div class="subcard-top">
             <span class="card-title">🤖 Expose AU</span>
-            <span class="subcard-badge badge-valCondition">TCP</span>
+            <span class="subcard-badge badge-valCondition">API / TCP</span>
           </div>
           <p style="color:var(--text-muted);font-size:12px;line-height:1.5;">
-            Expose the Administrative Unit (<code>AU/au.py tcp &lt;port&gt;</code>) for AI skill &amp; external TCP client integration.
+            Expose the Administrative Unit via authenticated Spring API (<code>/api/au/command</code>, key in <code>AAU/script/api/api.txt</code>) for AI skill integration.
           </p>
         </div>
 
@@ -498,6 +498,18 @@
             </div>
           </div>
 
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed var(--border);">
+            <span style="font-size:11.5px;color:var(--text-muted);font-weight:600;" title="Stored in AAU/script/api/api.txt">Agent API Key</span>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnCopyAuApi" title="Copy current API key from AAU/script/api/api.txt to clipboard">
+                📋 Copy API
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnNewAuApi" title="Generate a brand-new random API key and save to AAU/script/api/api.txt">
+                🔄 New API
+              </button>
+            </div>
+          </div>
+
           <div id="exposeAuControlsWrap" class="hidden" style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px dashed var(--border);">
             <div id="auNotConfiguredHint" class="hidden" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(210,153,34,0.45);background:rgba(210,153,34,0.12);color:var(--warning);font-size:11.5px;">
               ⚠️ AU configuration is not set. Click <strong>Set up AU</strong> before starting AU.
@@ -505,7 +517,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:6px;">
                 <label for="inpAuPort" style="font-size:11.5px;color:var(--text-muted);font-weight:600;">Port</label>
-                <input type="text" inputmode="numeric" id="inpAuPort" class="input input-sm input-mono" value="10010" maxlength="5" style="width:82px;" title="AU TCP Port (1000 - 65535)" />
+                <input type="text" inputmode="numeric" id="inpAuPort" class="input input-sm input-mono" value="10010" maxlength="5" style="width:82px;" title="Internal AU TCP Port (1000 - 65535)" />
               </div>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" id="btnSetupAu">
@@ -649,6 +661,8 @@
     const btnSetupAu = document.getElementById("btnSetupAu");
     const btnStartAu = document.getElementById("btnStartAu");
     const btnStopAu = document.getElementById("btnStopAu");
+    const btnCopyAuApi = document.getElementById("btnCopyAuApi");
+    const btnNewAuApi = document.getElementById("btnNewAuApi");
     const auStatusDot = document.getElementById("auStatusDot");
     const auStatusLabel = document.getElementById("auStatusLabel");
     const auConfigStatusDot = document.getElementById("auConfigStatusDot");
@@ -660,6 +674,7 @@
     let isAuStarting = false;
     let isAuConfigured = false;
     let activeAuPort = 10010;
+    let activeAuApiKey = "";
     let lastAauLogText = "";
 
     function showToast(msg) {
@@ -894,6 +909,49 @@
       updateExposeAuControls();
     });
 
+    if (btnCopyAuApi) {
+      btnCopyAuApi.addEventListener("click", async () => {
+        try {
+          if (!activeAuApiKey) {
+            const res = await fetch("/api/au/api-key", { cache: "no-store" });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.apiKey) activeAuApiKey = String(data.apiKey);
+            }
+          }
+          if (!activeAuApiKey) {
+            showToast("Failed to retrieve API key");
+            return;
+          }
+          await copyCertValue(activeAuApiKey, "AU API Key", btnCopyAuApi);
+        } catch (err) {
+          showToast(err.message || "Failed to copy API key");
+        }
+      });
+    }
+
+    if (btnNewAuApi) {
+      btnNewAuApi.addEventListener("click", async () => {
+        btnNewAuApi.disabled = true;
+        const origText = btnNewAuApi.textContent;
+        btnNewAuApi.textContent = "Generating…";
+        try {
+          const res = await fetch("/api/au/api-key/new", { method: "POST" });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Failed to generate new API key");
+          }
+          activeAuApiKey = String(data.apiKey || "");
+          showToast("New AU API key generated and saved to AAU/script/api/api.txt");
+        } catch (err) {
+          showToast(err.message || "Failed to generate new API key");
+        } finally {
+          btnNewAuApi.disabled = false;
+          btnNewAuApi.textContent = origText;
+        }
+      });
+    }
+
     btnSetupAau.addEventListener("click", () => {
       if (!chkRemoteAau.checked) {
         window.location.href = "/aau-setup.html";
@@ -1023,6 +1081,7 @@
           isAuRunning = Boolean(data.auRunning);
           isAuConfigured = Boolean(data.auConfigured);
           if (data.auPort) activeAuPort = Number(data.auPort);
+          if (data.apiKey) activeAuApiKey = String(data.apiKey);
         }
       } catch (_) {}
       updateExposeAuControls();

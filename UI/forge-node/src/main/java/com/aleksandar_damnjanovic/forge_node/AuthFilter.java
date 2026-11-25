@@ -18,9 +18,11 @@ import java.nio.charset.StandardCharsets;
 public class AuthFilter extends OncePerRequestFilter {
 
 	private final TokenService tokenService;
+	private final AuConfigController auConfigController;
 
-	public AuthFilter(TokenService tokenService) {
+	public AuthFilter(TokenService tokenService, AuConfigController auConfigController) {
 		this.tokenService = tokenService;
+		this.auConfigController = auConfigController;
 	}
 
 	@Override
@@ -44,6 +46,15 @@ public class AuthFilter extends OncePerRequestFilter {
 			return;
 		}
 
+		// Allow AI skill / API key authentication on /api/au/command
+		if ("/api/au/command".equals(path)) {
+			String apiKey = extractApiKey(request);
+			if (apiKey != null && auConfigController.isValidApiKey(apiKey)) {
+				filterChain.doFilter(request, response);
+				return;
+			}
+		}
+
 		String token = AuthController.extractToken(request);
 		String subject = tokenService.validateAndGetSubject(token);
 
@@ -59,6 +70,25 @@ public class AuthFilter extends OncePerRequestFilter {
 		}
 
 		filterChain.doFilter(request, response);
+	}
+
+	private String extractApiKey(HttpServletRequest request) {
+		String header = request.getHeader("X-API-Key");
+		if (header != null && !header.isBlank()) {
+			return header.trim();
+		}
+		String fnHeader = request.getHeader("X-Forge-Node-Key");
+		if (fnHeader != null && !fnHeader.isBlank()) {
+			return fnHeader.trim();
+		}
+		String auth = request.getHeader("Authorization");
+		if (auth != null && auth.regionMatches(true, 0, "Bearer ", 0, 7)) {
+			String bearer = auth.substring(7).trim();
+			if (!bearer.isEmpty()) {
+				return bearer;
+			}
+		}
+		return null;
 	}
 
 	private boolean isPublicPath(String path) {
