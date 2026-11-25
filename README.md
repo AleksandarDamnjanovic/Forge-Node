@@ -21,16 +21,16 @@ Once the nodes are installed and running, you can tweak, reconfigure, or complet
 Navigate into project root directory and use docker to create image with command `docker build -t forge-node:latest .` Then first check docker-compose.yml for custom settings. After that is done `docker compose up -d` in order to start docker container. Interface is exposed on port 10011 and default credentials are admin1 password.
 
 ## Documentation
-[What this solution contains](./docs/what this solution contains.md)
-[How it works](./docs/how it works.md)
-[How communication works](./docs/how communication works.md)
-[Communication over administrative channel](./docs/communication over administrative channel.md)
-[FN Script](./docs/fn script.md)
-[AU](./docs/au.md)
-[Split system and wrappers](./docs/split system and wrappers.md)
+- [What this solution contains](./docs/what this solution contains.md)
+- [How it works](./docs/how it works.md)
+- [How communication works](./docs/how communication works.md)
+- [Communication over administrative channel](./docs/communication over administrative channel.md)
+- [FN Script](./docs/fn script.md)
+- [AU](./docs/au.md)
+- [Split system and wrappers](./docs/split system and wrappers.md)
 
 ## Supported configurations
 
-![](./docs/Monolithic Architecture.jpg)
+![](./docs/Monolithic_Architecture.jpg)
 
-![](./docs/Modular Architecture.jpg)
+![](./docs/Modular_Architecture.jpg)
