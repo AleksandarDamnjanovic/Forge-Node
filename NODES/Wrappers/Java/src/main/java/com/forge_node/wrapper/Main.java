@@ -19,6 +19,7 @@ public class Main {
 
     static final int shuntPort = 10023;
     static final int bridgePort = 10024;
+    static final String aesSecretKey = "forge_node_shunt_bridge_secret";
 
     public static void main(String[] args) {
         new Thread(new Runnable() {
@@ -74,7 +75,7 @@ public class Main {
         float sensors[]= {0f,0f};
         String transmitters[] = {"", ""};
         NODE node = new NODE(2, 2, 2, 2, switches, sensors, transmitters);
-        BRIDGE bridge = new BRIDGE(node, "192.168.0.17", shuntPort, bridgePort);
+        BRIDGE bridge = new BRIDGE(node, "192.168.0.17", shuntPort, bridgePort, aesSecretKey);
         bridge.setControl(true);
         bridge.initializeShuntHandler();
         bridge.initializeSlaveHandler();
@@ -101,7 +102,7 @@ public class Main {
         float sensors[]= {0f,0f};
         String transmitters[] = {"", ""};
         NODE node = new NODE(1, 2, 2, 2, switches, sensors, transmitters);
-        SHUNT shunt = new SHUNT(node, 1, 3, shuntPort);
+        SHUNT shunt = new SHUNT(node, 1, 3, shuntPort, aesSecretKey);
         shunt.setupClient("1f", "00004444", "192.168.0.24", 8883, "./store.jks", "password");
         shunt.getClient().setControl(true);
         shunt.getClient().startListening();

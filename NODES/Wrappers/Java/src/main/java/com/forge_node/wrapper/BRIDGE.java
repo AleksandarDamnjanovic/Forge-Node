@@ -25,6 +25,7 @@ public class BRIDGE {
     private int shuntPORT = -1;
     private int bridgePORT = -1;
     private boolean control= false;
+    private String aesKey = "";
     private List<NODE_INSTRUCTION>forSlaves;
     private List<NODE_INSTRUCTION>forShunt;
     private shuntHandler shunt;
@@ -33,13 +34,42 @@ public class BRIDGE {
     private final Object lock = new Object();
 
     public BRIDGE(NODE node, String shuntIP, int shuntPORT, int bridgePORT){
+        this(node, shuntIP, shuntPORT, bridgePORT, "");
+    }
+
+    public BRIDGE(NODE node, String shuntIP, int shuntPORT, int bridgePORT, String aesSecretKey){
         this.node = new bridgeNODE(node);
         this.shuntIP = shuntIP;
         this.shuntPORT = shuntPORT;
         this.bridgePORT = bridgePORT;
+        this.aesKey = aesSecretKey == null ? "" : aesSecretKey;
 
         forSlaves = new ArrayList<>();
         forShunt = new ArrayList<>();
+    }
+
+    public void setAesKey(String secretKey){
+        synchronized(lock){
+            this.aesKey = secretKey == null ? "" : secretKey;
+        }
+    }
+
+    public String getAesKey(){
+        synchronized(lock){
+            return this.aesKey;
+        }
+    }
+
+    public String buildEncryptedPayloadForShunt(){
+        String confirmations = this.node.getMessage();
+        return CRYPTO.encrypt(confirmations, getAesKey());
+    }
+
+    public void processEncryptedPayloadFromShunt(String encryptedPayload){
+        String decrypted = CRYPTO.decrypt(encryptedPayload, getAesKey()).trim();
+        if(!decrypted.isEmpty()){
+            this.node.processInstructions(decrypted);
+        }
     }
 
     public void setControl(boolean value){
@@ -130,11 +160,16 @@ public class BRIDGE {
         List<NODE_INSTRUCTION> lista = getForSlavesByIndex(index);
         for(NODE_INSTRUCTION n : lista){
             message = message + "I_" + n.getNodeIndex() + "_" + n.getType() + "_" + 
-            n.getElementIndex() + "_";
-            if(n.getType()=='C')
-                message = message + n.getIntValue() + " ";
-            else if (n.getType()=='R')
-                message = message + n.getFloatValue() + " ";
+            n.getElementIndex();
+            if(n.getType() == 'S'){
+                message = message + " ";
+            }else if(n.getType() == 'C'){
+                message = message + "_" + n.getIntValue() + " ";
+            }else if(n.getType() == 'T'){
+                message = message + "_" + n.getStringValue() + " ";
+            }else if(n.getType() == 'R'){
+                message = message + "_" + String.format(java.util.Locale.US, "%.2f", n.getFloatValue()) + " ";
+            }
         }
         message = message + "\n";
         removeForSlavesByIndex(index);
@@ -220,17 +255,25 @@ public class BRIDGE {
                             shuntClient.setSoTimeout(60000);
                             InputStream is = shuntClient.getInputStream();
                             OutputStream os = shuntClient.getOutputStream();
-                            String confirmations = node.getMessage();
-                            byte data[] = confirmations.getBytes();
+                            String encryptedConfirmations = buildEncryptedPayloadForShunt();
+                            byte data[] = encryptedConfirmations.getBytes("UTF8");
                             os.write(data, 0, data.length);
                             os.flush();
-                            data= new byte[2048];
-                            is.read(data);
-                            String instructions = new String(data, "UTF8");
-                            node.processInstructions(instructions);
+                            data = new byte[4096];
+                            int bytesRead = is.read(data);
+                            if(bytesRead > 0){
+                                String encryptedInstructions = new String(data, 0, bytesRead, "UTF8").trim();
+                                if(!encryptedInstructions.isEmpty())
+                                    processEncryptedPayloadFromShunt(encryptedInstructions);
+                            }
                             shuntClient.close();
-                        } catch (IOException e) {
+                            Thread.sleep(200);
+                        } catch (IOException | InterruptedException e) {
                             e.printStackTrace();
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException ignored) {
+                            }
                         }
                     }
                 }
@@ -258,27 +301,32 @@ public class BRIDGE {
                         server = new ServerSocket(bridgePORT);
                     } catch (IOException e) {
                         e.printStackTrace();
+                        return;
                     }
 
                     Socket slaveClient = null;
                     while(getControl()){
                         try {
                             slaveClient = server.accept();
-                            slaveClient.setSoTimeout(10);
+                            slaveClient.setSoTimeout(5000);
                             InputStream is = slaveClient.getInputStream();
                             OutputStream os = slaveClient.getOutputStream();
                             byte data[] = new byte[2048];
-                            is.read(data);
-                            String instructions = new String(data, "UTF8");
-                            node.processSlaveConfirmations(instructions);
-                            List<NODE_INSTRUCTION> lista= NODE_INSTRUCTION.getListOfInstructions(instructions);
-                            int index = lista.get(0).getNodeIndex();
-                            String message = getMessageForSlaveByIndex(index);
-                            data = message.getBytes();
-                            os.write(data, 0, data.length);
-                            os.flush();
+                            int bytesRead = is.read(data);
+                            String instructions = bytesRead > 0 ? new String(data, 0, bytesRead, "UTF8").trim() : "";
+                            if(!instructions.isEmpty()){
+                                node.processSlaveConfirmations(instructions);
+                                List<NODE_INSTRUCTION> lista = NODE_INSTRUCTION.getListOfInstructions(instructions);
+                                if(!lista.isEmpty()){
+                                    int index = lista.get(0).getNodeIndex();
+                                    String message = getMessageForSlaveByIndex(index);
+                                    data = message.getBytes("UTF8");
+                                    os.write(data, 0, data.length);
+                                    os.flush();
+                                }
+                            }
                             slaveClient.close();
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                             if(slaveClient != null)
                                 try {
@@ -318,7 +366,7 @@ public class BRIDGE {
                 if(n.getType()=='C')
                     message = message + n.getIntValue() + " ";
                 else if (n.getType()=='R')
-                    message = message + n.getFloatValue() + " ";
+                    message = message + String.format(java.util.Locale.US, "%.2f", n.getFloatValue()) + " ";
             }
             message = message + "\n";
 
@@ -328,22 +376,27 @@ public class BRIDGE {
 
         @Override 
         public void processInstructions(String rawMessage){
-            if(rawMessage.startsWith("Cr"))
+            if(rawMessage == null || rawMessage.startsWith("Cr"))
                 return;
             List<NODE_INSTRUCTION> allInstructions= NODE_INSTRUCTION.getListOfInstructions(rawMessage);
-            synchronized(lock){
-                forSlaves= new ArrayList<>();
-            }
+            if(allInstructions.isEmpty())
+                return;
             for(int i = 0; i < allInstructions.size(); i++){
-                if(allInstructions.get(i).getNodeIndex() != this.getNodeIndex()){
+                NODE_INSTRUCTION incoming = allInstructions.get(i);
+                if(incoming.getNodeIndex() != this.getNodeIndex()){
                     synchronized(lock){
-                        forSlaves.add(allInstructions.get(i));
+                        forSlaves.removeIf(existing ->
+                            existing.getNodeIndex() == incoming.getNodeIndex()
+                            && existing.getType() == incoming.getType()
+                            && existing.getElementIndex() == incoming.getElementIndex()
+                        );
+                        forSlaves.add(incoming);
                     }
                 }else{
-                    if(allInstructions.get(i).getType()=='C')
-                        this.writeSwitch(allInstructions.get(i).getElementIndex(), (allInstructions.get(i).getIntValue()==1? true : false));
-                    else if(allInstructions.get(i).getType()=='T')
-                        this.writeTransmitter(allInstructions.get(i).getElementIndex(), allInstructions.get(i).getStringValue());
+                    if(incoming.getType()=='C')
+                        this.writeSwitch(incoming.getElementIndex(), (incoming.getIntValue()==1? true : false));
+                    else if(incoming.getType()=='T')
+                        this.writeTransmitter(incoming.getElementIndex(), incoming.getStringValue());
                 }
             }
         }

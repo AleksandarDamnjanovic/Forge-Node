@@ -34,23 +34,30 @@ public class SLAVE {
                 while(getControl()){
                     try {
                         Socket socket = new Socket(getBridgeAddress(), getBridgePORT());
-                        socket.setSoTimeout(100);
+                        socket.setSoTimeout(5000);
                         InputStream is = socket.getInputStream();
                         OutputStream os = socket.getOutputStream();
                         String message = node.getMessage();
-                        byte data[] = message.getBytes();
+                        byte data[] = message.getBytes("UTF8");
                         os.write(data, 0, data.length);
                         os.flush();
                         data = new byte[2048];
-                        is.read(data);
-                        message = new String(data, "UTF8");
-                        node.processInstructions(message);
-                        Thread.sleep(50);
+                        int bytesRead = is.read(data);
+                        if(bytesRead > 0){
+                            message = new String(data, 0, bytesRead, "UTF8").trim();
+                            if(!message.isEmpty())
+                                node.processInstructions(message);
+                        }
+                        Thread.sleep(200);
                         os.close();
                         is.close();
                         socket.close();
                     } catch (IOException | InterruptedException e) {
                         e.printStackTrace();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignored) {
+                        }
                     }
                 }
             }

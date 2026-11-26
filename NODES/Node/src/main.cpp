@@ -65,13 +65,15 @@ void setup() {
                     2);
 }
 
-long t = 0;
+unsigned long t = 0;
 void loop() {
     
     if(t==0)
         t= millis();
 
     MQTT_CONNECT();
+    if(!mqtt->connected())
+        return;
 
     Adafruit_MQTT_Subscribe *sub;
     while((sub= mqtt->readSubscription(1000)))
@@ -119,7 +121,7 @@ void MQTT_CONNECT(){
         delay(3000);
         counter--;
         if(counter==0)
-            break;
+            return;
     }
 
     Serial.println("MQTT connection is established...");

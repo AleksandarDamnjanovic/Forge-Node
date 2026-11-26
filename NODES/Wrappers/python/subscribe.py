@@ -13,7 +13,9 @@ import support
 
 def run():
     support.client.subscribe(support.topic)
-    while(support.control):
-        support.client.loop_start()
-        time.sleep(1)
+    support.client.loop_start()
+    try:
+        while support.control:
+            time.sleep(0.2)
+    finally:
         support.client.loop_stop()

@@ -28,9 +28,13 @@ Navigate into project root directory and use docker to create image with command
 - [FN Script](./docs/fn_script.md)
 - [AU](./docs/au.md)
 - [Split system and wrappers](./docs/split_system_and_wrappers.md)
+- [REST API](./docs/rest_api.md)
 
 ## Supported configurations
 
 ![](./docs/Monolithic_Architecture.jpg)
 
 ![](./docs/Modular_Architecture.jpg)
+
+## DISCLAIMER
+The motto “no restraints, no limitations” reflects the design philosophy of Forge Node — specifically, that the system is built not to harvest user data and not to impose artificial restrictions on feature access. It is not a guarantee of unrestricted functionality, reliability, or fitness for any particular purpose. Use of this software is at your own risk.

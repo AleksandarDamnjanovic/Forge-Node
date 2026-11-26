@@ -8,16 +8,6 @@
 '''
 
 class NODE:
-    index = -1
-
-    numOfSwitches = 0
-    numOfSensors = 0
-    numOfTransmitters = 0
-
-    switches = None
-    sensors = None
-    transmitters = None
-
     def __init__(this, index, numOfSwitches, numOfSensors, numOfTransmitters, 
             switches: list[bool], sensors: list[float], transmitters: list[str]):
         this.index = index
@@ -42,33 +32,55 @@ class NODE:
         return message
 
     def processInstructions(this, instructions: str):
-        tokens = instructions.split(" ")
+        if not instructions or not instructions.strip():
+            return
+        tokens = instructions.strip().split()
 
         for t in tokens:
+            if not t:
+                continue
             e = t.split("_")
+            if len(e) < 4:
+                print(f"Instruction {t}, not properly formated\n")
+                continue
 
-            if e[0]!= 'I':
-                print(f"Instruction {instructions}, not properly formated\n")
-                return
+            if e[0] != 'I':
+                print(f"Instruction {t}, not properly formated\n")
+                continue
 
-            if e[1]!= str(this.index):
-                print(f"Instruction {instructions}, holds wrong node index\n")
-                return
+            if e[1] != str(this.index):
+                continue
 
-            if e[2]=='C':
-                val = bool(e[4])
-                this.switches[int(e[3])] = val
-            elif e[2]=='T':
-                this.transmitters[int(e[3])] = str(e[4])
+            try:
+                el_idx = int(e[3])
+            except ValueError:
+                continue
+
+            if e[2] == 'S':
+                continue
+            elif e[2] == 'C' and len(e) >= 5:
+                if 0 <= el_idx < this.numOfSwitches:
+                    val = (str(e[4]).strip() == "1" or str(e[4]).strip().lower() == "true")
+                    this.switches[el_idx] = val
+            elif e[2] == 'T' and len(e) >= 5:
+                if 0 <= el_idx < this.numOfTransmitters:
+                    this.transmitters[el_idx] = "_".join(e[4:])
 
     def getSwitchValue(this, elIndex):
-        return this.switches[elIndex]
+        if 0 <= elIndex < this.numOfSwitches:
+            return this.switches[elIndex]
+        return False
 
     def getSensorValue(this, elIndex):
-        return this.sensors[elIndex]
+        if 0 <= elIndex < this.numOfSensors:
+            return this.sensors[elIndex]
+        return -1.0
 
     def getTransmitterValue(this, elIndex):
-        return this.transmitters[elIndex]
+        if 0 <= elIndex < this.numOfTransmitters:
+            return this.transmitters[elIndex]
+        return ""
 
     def setSensorValue(this, elIndex, value: float):
-        this.sensors[elIndex]= value
+        if 0 <= elIndex < this.numOfSensors:
+            this.sensors[elIndex] = float(value)

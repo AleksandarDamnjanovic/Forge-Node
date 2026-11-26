@@ -28,6 +28,8 @@
 #define NODE_MQTT_USERNAME       ""
 #define NODE_MQTT_PASSWORD       ""
 
+#define NODE_AES_SECRET_KEY      ""
+
 class NODE{
     public:
         NODE(int type, 
@@ -41,24 +43,34 @@ class NODE{
             int numOfSensors,
             int numOfTransmitters);
 
+        virtual ~NODE() {}
+
         int getSwitchByIndex(int index);
         boolean getSwitchStateByIndex(int index);
         String getTransmitterByIndex(int index);
         float getSensorByIndex(int index);
+        int *getSwitches();
+        boolean *getSwitchStates();
+        String *getTransmitters();
+        float *getSensors();
+        int getNumOfSwitches();
+        int getNumOfSensors();
+        int getNumOfTransmitters();
         String compileMessage();
         int getNodeIndex();
         int getType();
         int getSlaveTo();
 
-        String getResponse();
+        virtual String getResponse();
         boolean validate();
         boolean processSensors();
         boolean processSwitches(int index, char* value);
         boolean processTransmitters(int index, char* value);
         boolean processInstruction(char* instruction);
-        void processMessage(String message);
+        virtual void processMessage(String message);
         void setSwitchState(int index, int value);
         void setTransmitterValue(int index, String value);
+        void setSensorValue(int index, float value);
         void sensorRead(int index);
 
     private:

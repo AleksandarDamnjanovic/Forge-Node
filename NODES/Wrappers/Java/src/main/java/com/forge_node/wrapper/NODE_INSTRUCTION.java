@@ -21,29 +21,47 @@ public class NODE_INSTRUCTION {
 
     public static ArrayList<NODE_INSTRUCTION>getListOfInstructions(String rawMessage){
         ArrayList<NODE_INSTRUCTION>lista = new ArrayList<NODE_INSTRUCTION>();
-        String tokens[] = rawMessage.split(" ");
+        if(rawMessage == null || rawMessage.isBlank())
+            return lista;
+        String cleaned = rawMessage.replace("\0", "").trim();
+        if(cleaned.isEmpty())
+            return lista;
+        String tokens[] = cleaned.split("\\s+");
         for(String t: tokens)
-            if(t.startsWith("I") || t.startsWith("Cr"))
-                lista.add(new NODE_INSTRUCTION(t));
+            if(t.startsWith("I_") || t.startsWith("Cr_")){
+                NODE_INSTRUCTION inst = new NODE_INSTRUCTION(t);
+                if(inst.getNodeIndex() > 0)
+                    lista.add(inst);
+            }
 
         return lista;
     }
 
     public NODE_INSTRUCTION(String raw){
-        String tokens[] = raw.split("_");
+        String cleaned = raw == null ? "" : raw.replace("\0", "").trim();
+        String tokens[] = cleaned.split("_");
         try{
-            nodeIndex = Integer.parseInt(tokens[1]);
-            type = tokens[2].charAt(0);
-            elementIndex = Integer.parseInt(tokens[3]);
+            if(tokens.length < 4)
+                return;
+            nodeIndex = Integer.parseInt(tokens[1].trim());
+            type = tokens[2].trim().charAt(0);
+            elementIndex = Integer.parseInt(tokens[3].trim());
             switch(type){
                 case 'C':
-                    intValue = Integer.parseInt(tokens[4]);
+                    if(tokens.length >= 5)
+                        intValue = Integer.parseInt(tokens[4].trim());
                 break;
                 case 'R':
-                    floatValue = Float.parseFloat(tokens[4]);
+                    if(tokens.length >= 5)
+                        floatValue = Float.parseFloat(tokens[4].trim());
                 break;
                 case 'T':
-                    stringValue = tokens[4];
+                    if(tokens.length >= 5)
+                        stringValue = tokens[4].trim();
+                    else
+                        stringValue = "";
+                break;
+                case 'S':
                 break;
             }
         }catch(Exception e){

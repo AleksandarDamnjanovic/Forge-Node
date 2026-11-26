@@ -10,6 +10,7 @@
 package com.forge_node.wrapper;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class NODE {
     private int nodeIndex;
@@ -66,7 +67,7 @@ public class NODE {
             message = message + "Cr_" + getNodeIndex() + "_C_" + i + "_" + (getSwitchValue(i)?"1":"0") + " ";
         
         for(int i = 0; i < getNumOfSensors(); i++)
-            message = message + "Cr_" + getNodeIndex() + "_R_" + i + "_" + String.format("%.2f", getSensorValue(i)) + " ";
+            message = message + "Cr_" + getNodeIndex() + "_R_" + i + "_" + String.format(Locale.US, "%.2f", getSensorValue(i)) + " ";
         
         message = message + "\n";
 
