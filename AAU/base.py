@@ -56,11 +56,10 @@ def on_message(client, data, message):
             return
         
         if message.topic== "admin":
-            mess= processAdmin(text)
+            with support.rerunLock:
+                mess = processAdmin(text)
             if mess != "":
-                while support.START == True:
-                    time.sleep(0.2)
-                client= clients.get(0)
+                client = clients.get(0)
                 if client != None:
                     client.publish("admin", mess)
         else:
@@ -85,15 +84,16 @@ def on_message(client, data, message):
 
                 __result = True
                 demand = -1
-                for l in __lines:
-                    res = support.factory.processConfirmation(l)
-                    if res == None:
-                        continue
-                    valid, d = res
-                    if valid == False:
-                        __result= False
-                    if d != -1:
-                        demand = d
+                with support.rerunLock:
+                    for l in __lines:
+                        res = support.factory.processConfirmation(l)
+                        if res == None:
+                            continue
+                        valid, d = res
+                        if valid == False:
+                            __result= False
+                        if d != -1:
+                            demand = d
                 if demand != -1:
                     logit(f"update called by sensor on node: {demand}", 0)
                     rerun()

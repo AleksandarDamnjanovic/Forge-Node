@@ -16,8 +16,8 @@ port = 0
 user = ""
 password = ""
 
-lock = threading.Lock()
-rerunLock = threading.Lock()
+lock = threading.RLock()
+rerunLock = threading.RLock()
 
 file = open("./configuration.conf", "r")
 configuration = file.read()

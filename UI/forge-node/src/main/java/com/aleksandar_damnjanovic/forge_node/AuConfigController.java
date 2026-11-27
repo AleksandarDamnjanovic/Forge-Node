@@ -42,6 +42,7 @@ public class AuConfigController {
 	private volatile int auPort = DEFAULT_AU_PORT;
 	private volatile int serverPort = 10001;
 	private volatile String apiKey = "";
+	private final Object auCommandLock = new Object();
 	private Process localAuProcess;
 
 	public AuConfigController(
@@ -474,36 +475,38 @@ public class AuConfigController {
 					"error", "Missing 'command' in request body."
 			));
 		}
-		try (Socket socket = new Socket()) {
-			socket.connect(new InetSocketAddress("127.0.0.1", this.auPort), 5000);
-			socket.setSoTimeout(15000);
-			OutputStream out = socket.getOutputStream();
-			out.write(command.getBytes(StandardCharsets.UTF_8));
-			out.flush();
+		synchronized (auCommandLock) {
+			try (Socket socket = new Socket()) {
+				socket.connect(new InetSocketAddress("127.0.0.1", this.auPort), 5000);
+				socket.setSoTimeout(15000);
+				OutputStream out = socket.getOutputStream();
+				out.write(command.getBytes(StandardCharsets.UTF_8));
+				out.flush();
 
-			InputStream in = socket.getInputStream();
-			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			byte[] chunk = new byte[4096];
-			int read;
-			while ((read = in.read(chunk)) != -1) {
-				buffer.write(chunk, 0, read);
-			}
-			String respText = buffer.toString(StandardCharsets.UTF_8).trim();
-			if (respText.isEmpty()) {
+				InputStream in = socket.getInputStream();
+				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+				byte[] chunk = new byte[4096];
+				int read;
+				while ((read = in.read(chunk)) != -1) {
+					buffer.write(chunk, 0, read);
+				}
+				String respText = buffer.toString(StandardCharsets.UTF_8).trim();
+				if (respText.isEmpty()) {
+					return ResponseEntity.status(502).body(Map.of(
+							"ok", false,
+							"error", "Empty response received from AU server."
+					));
+				}
+				return ResponseEntity.ok(Map.of(
+						"ok", true,
+						"response", respText
+				));
+			} catch (Exception e) {
 				return ResponseEntity.status(502).body(Map.of(
 						"ok", false,
-						"error", "Empty response received from AU server."
+						"error", "Failed to communicate with local AU server on 127.0.0.1:" + this.auPort + " (" + e.getMessage() + ")"
 				));
 			}
-			return ResponseEntity.ok(Map.of(
-					"ok", true,
-					"response", respText
-			));
-		} catch (Exception e) {
-			return ResponseEntity.status(502).body(Map.of(
-					"ok", false,
-					"error", "Failed to communicate with local AU server on 127.0.0.1:" + this.auPort + " (" + e.getMessage() + ")"
-			));
 		}
 	}
 
