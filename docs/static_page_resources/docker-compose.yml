@@ -1,0 +1,27 @@
+services:
+  forge-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: forge-node:latest
+    container_name: forge-node
+    restart: unless-stopped
+    working_dir: /home/FORGE-NODE
+    environment:
+      - FN_ADMIN_USER=admin1
+      - FN_ADMIN_PASSWORD=password
+      - FN_EXPOSE_MQTT=true
+      - FN_EXPOSE_AU=true
+      - FN_RUN_ON_PRECONFIGURED=true
+      # SSL mode for Nginx on port 10011: none | self-signed
+      - FN_SSL_MODE=none
+    ports:
+      # Nginx reverse proxy port (HTTP if FN_SSL_MODE=none, HTTPS if FN_SSL_MODE=self-signed)
+      - "10011:10011"
+      # AU TCP port (expose only if FN_EXPOSE_AU=true)
+      - "10010:10010"
+      # Local Mosquitto MQTT TLS port (expose only if FN_EXPOSE_MQTT=true)
+      - "8883:8883"
+    volumes:
+      - ./shared:/home/FORGE-NODE/SHARED
+      - ./scripts:/home/FORGE-NODE/AAU/script

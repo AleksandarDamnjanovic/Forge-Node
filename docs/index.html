@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge Node — Script-Based, Privacy-First Automation Platform</title>
+  <meta name="description" content="Forge Node is a script-based, privacy-first automation platform for people who want their smart home, greenhouse, lab, or small factory to stay truly under their control.">
+
+  <!-- Open Graph Meta Tags (ensures banner.jpg appears when sharing links) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Forge Node — No Restraints. No Limitations.">
+  <meta property="og:description" content="Script-based, privacy-first automation platform. Set up your nodes once and control everything in real time with a simple, readable .fn script.">
+  <meta property="og:image" content="./static_page_resources/banner.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:alt" content="Forge Node — No Restraints. No Limitations.">
+
+  <!-- Twitter / X Card Meta Tags (ensures banner.jpg dominates the Twitter preview card) -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Forge Node — No Restraints. No Limitations.">
+  <meta name="twitter:description" content="Script-based, privacy-first automation platform. Set up your nodes once and control everything in real time with a simple, readable .fn script.">
+  <meta name="twitter:image" content="./static_page_resources/banner.jpg">
+  <meta name="twitter:image:alt" content="Forge Node — No Restraints. No Limitations.">
+
+  <!-- Google Fonts for Modern Tech Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static_page_resources/styles.css">
+</head>
+<body>
+  <!-- Ambient Background Layers over repeating background.jpg -->
+  <div class="bg-overlay" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- Top Navigation Bar -->
+  <nav class="top-nav" aria-label="Primary Navigation">
+    <div class="nav-inner">
+      <a href="#top" class="brand-link">
+        <span class="brand-dot cyan"></span>
+        <span class="brand-dot orange"></span>
+        <span class="brand-text"><span class="text-cyan">Forge</span> <span class="text-orange">Node</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="#install">How to Install</a>
+        <a href="#tutorials">Tutorials</a>
+        <a href="#presentation">Overview</a>
+        <a href="#hardware">Primitives</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#ecosystem">Ecosystem</a>
+        <a href="#disclaimer">Disclaimer</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dominant Top Hero Section featuring banner.jpg -->
+  <header id="top" class="hero-section">
+    <div class="hero-container">
+      <div class="banner-frame">
+        <div class="banner-glow-cyan" aria-hidden="true"></div>
+        <div class="banner-glow-orange" aria-hidden="true"></div>
+        <img
+          src="./static_page_resources/banner.jpg"
+          alt="Forge Node — No Restraints. No Limitations."
+          class="hero-banner-img"
+          fetchpriority="high"
+        >
+        <div class="banner-corner tl" aria-hidden="true"></div>
+        <div class="banner-corner tr" aria-hidden="true"></div>
+        <div class="banner-corner bl" aria-hidden="true"></div>
+        <div class="banner-corner br" aria-hidden="true"></div>
+      </div>
+
+      <div class="hero-caption">
+        <div class="status-pills">
+          <span class="pill pill-cyan"><span class="pulse-dot"></span> Real-Time <code>.fn</code> Script Engine</span>
+          <span class="pill pill-orange">Encrypted MQTT Core</span>
+          <span class="pill pill-neutral">Self-Hostable or Managed Hosting</span>
+        </div>
+        <p class="hero-sublead">
+          Scroll down to explore how Forge Node unifies hardware nodes, encrypted coordination, and human-readable automation logic.
+        </p>
+        <a href="#presentation" class="scroll-cue" aria-label="Scroll to presentation">
+          <span>Explore the Platform</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Cascading Content -->
+  <main class="main-content">
+
+    <!-- HOW TO INSTALL SECTION (configured via ./meta.conf) -->
+    <section id="install" class="install-section reveal-item">
+      <div class="section-intro install-intro">
+        <span class="eyebrow">Deployment Options</span>
+        <h2 class="section-title">
+          How to <span class="gradient-text">Install</span>
+        </h2>
+        <p class="section-lead">
+          Choose your preferred way to get Forge Node running — build everything yourself directly from the repository or pull the ready-to-run Docker image and compose stack.
+        </p>
+        <div class="cascade-divider" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="install-grid">
+        <!-- Option 1: Go to GitHub and do it yourself -->
+        <div class="install-card install-card-github reveal-left" style="--stagger: 0.08s;">
+          <div class="install-card-top">
+            <span class="install-option-tag">OPTION 01 // FROM SOURCE</span>
+            <div class="install-icon-wrap cyan">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+              </svg>
+            </div>
+          </div>
+
+          <h3 class="install-card-title">Go to GitHub &amp; Do It Yourself</h3>
+          <p class="install-card-desc">
+            Explore the full source code, firmware, AAU interpreter, web application, and documentation directly on GitHub to build and customize every piece yourself.
+          </p>
+
+          <div class="install-repo-preview">
+            <span class="mono-label">Repository</span>
+            <code class="repo-url" id="githubUrlDisplay">https://github.com/AleksandarDamnjanovic/Forge-Node</code>
+          </div>
+
+          <div class="install-actions">
+            <a
+              href="https://github.com/AleksandarDamnjanovic/Forge-Node"
+              id="githubLinkBtn"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="install-btn install-btn-cyan"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+              </svg>
+              <span>Go to GitHub &amp; Do It Yourself</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 17L17 7M17 7H7M17 7V17" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Option 2: Copy Docker Pull Command & Download docker-compose.yml -->
+        <div class="install-card install-card-docker reveal-right" style="--stagger: 0.18s;">
+          <div class="install-card-top">
+            <span class="install-option-tag tag-orange">OPTION 02 // DOCKER QUICKSTART</span>
+            <div class="install-icon-wrap orange">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="22.08" x2="12" y2="12" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <h3 class="install-card-title">Pull Docker Image &amp; Compose Stack</h3>
+          <p class="install-card-desc">
+            Copy the official Docker pull command below and download the preconfigured <code>docker-compose.yml</code> file to launch the stack on port <code>10011</code>.
+          </p>
+
+          <!-- Copyable Docker Pull Command Box -->
+          <div class="command-box">
+            <div class="command-header">
+              <span class="mono-label">Docker Pull Command</span>
+              <span class="copy-status" id="copyStatus" aria-live="polite">Ready to copy</span>
+            </div>
+            <div class="command-row">
+              <code class="command-text" id="dockerPullCommandText">docker pull kindspirittechnology/forge-node</code>
+              <button
+                type="button"
+                id="copyDockerCmdBtn"
+                class="copy-cmd-btn"
+                aria-label="Copy Docker pull command"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span id="copyBtnLabel">Copy Command</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Download docker-compose.yml Button -->
+          <div class="install-actions">
+            <a
+              href="./static_page_resources/docker-compose.yml"
+              download="docker-compose.yml"
+              id="downloadComposeBtn"
+              class="install-btn install-btn-orange"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="7 10 12 15 17 10" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="15" x2="12" y2="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Download <code>docker-compose.yml</code></span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TUTORIALS SECTION (configured via ./meta.conf) -->
+    <section id="tutorials" class="tutorials-section reveal-item">
+      <div class="tutorials-card">
+        <div class="tutorials-glow-left" aria-hidden="true"></div>
+        <div class="tutorials-glow-right" aria-hidden="true"></div>
+
+        <div class="tutorials-content">
+          <div class="tutorials-badge-row">
+            <span class="eyebrow">Step-by-Step Video Guides</span>
+            <span class="yt-pill">YouTube Playlist</span>
+          </div>
+          <h2 class="tutorials-title">
+            Forge Node <span class="gradient-text">Tutorials</span>
+          </h2>
+          <p class="tutorials-desc">
+            Watch the official video tutorials playlist to see how to configure nodes, write and reload real-time <code>.fn</code> automation scripts, set up encrypted MQTT, and run your stack.
+          </p>
+        </div>
+
+        <div class="tutorials-cta">
+          <a
+            href="https://www.youtube.com/playlist?list=PLGrycSvrOKWc"
+            id="tutorialsLinkBtn"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="tutorials-btn"
+          >
+            <span class="yt-play-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+            </span>
+            <span class="tutorials-btn-text">
+              <strong>Watch Tutorials on YouTube</strong>
+              <small>Open Official Video Playlist &rarr;</small>
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section Header -->
+    <section id="presentation" class="section-intro reveal-item">
+      <span class="eyebrow">System Presentation</span>
+      <h1 class="section-title">
+        True Control Over Your <span class="gradient-text">Automation Stack</span>
+      </h1>
+      <div class="cascade-divider" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </section>
+
+    <!-- Cascading Presentation Stream: Pairing the 6 paragraphs from text.txt with 1.jpg - 4.jpg -->
+    <div class="cascade-stream">
+
+      <!-- CASCADE PAIR 1: Image 1.jpg + Paragraph 1 -->
+      <article class="cascade-row cascade-step-1" data-cascade="1">
+        <div class="cascade-visual reveal-left">
+          <div class="image-card">
+            <div class="card-badge">01 // REAL-TIME CONTROL</div>
+            <div class="image-wrapper">
+              <img src="./static_page_resources/1.jpg" alt="Effortless real-time control with Forge Node" loading="lazy">
+            </div>
+            <div class="image-footer-bar">
+              <span class="mono-tag">script.fn</span>
+              <span class="status-indicator">Live Reload Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cascade-text-group">
+          <div class="text-card cascade-card-offset-1 reveal-right" style="--stagger: 0.12s;">
+            <div class="card-index">
+              <span class="index-num">01</span>
+              <span class="index-label">Script-Based &amp; Privacy-First</span>
+            </div>
+            <p class="presentation-paragraph">
+              Forge Node is a script-based, privacy-first automation platform for people who want their smart home, greenhouse, lab, or small factory to stay truly under their control. Instead of wrestling with both hardware wiring and software every time something needs to change, you set up your nodes once. From that moment on, the entire behavior of the system lives in a simple, readable <code>.fn</code> script that you can edit and reload in real time.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- CASCADE PAIR 2: Image 2.jpg + Paragraph 2 & Paragraph 3 -->
+      <article id="hardware" class="cascade-row cascade-row-reverse cascade-step-2" data-cascade="2">
+        <div class="cascade-visual reveal-right">
+          <div class="image-card accent-orange">
+            <div class="card-badge badge-orange">02 // HARDWARE &amp; AAU CORE</div>
+            <div class="image-wrapper">
+              <img src="./static_page_resources/2.jpg" alt="Hardware prototyping and collaborative node setup" loading="lazy">
+            </div>
+            <div class="image-footer-bar">
+              <span class="mono-tag">ESP32 / ESP8266 / Arduino</span>
+              <span class="status-indicator orange">Encrypted MQTT</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cascade-text-group dual-cascade">
+          <div class="text-card cascade-card-offset-1 reveal-left" style="--stagger: 0.1s;">
+            <div class="card-index">
+              <span class="index-num">02</span>
+              <span class="index-label">High-Level Primitives</span>
+            </div>
+            <p class="presentation-paragraph">
+              The system is built around high-level primitives — switches, sensors, transmitters, and programs — rather than pins, voltages, or low-level firmware details. Nodes can be based on ESP32, ESP8266, Arduino, or other supported microcontrollers. Once they are running, you can reconfigure logic, add new rules, or completely rewrite how devices interact without soldering, without a multimeter, and without reflashing a single board. Everything stays yours.
+            </p>
+          </div>
+
+          <div class="text-card cascade-card-offset-2 reveal-left" style="--stagger: 0.25s;">
+            <div class="card-index">
+              <span class="index-num">03</span>
+              <span class="index-label">Auxiliary Automation Unit (AAU)</span>
+            </div>
+            <p class="presentation-paragraph">
+              At the heart of Forge Node is the AAU (Auxiliary Automation Unit), a Python-based interpreter that reads your <code>.fn</code> script and coordinates the whole network over encrypted MQTT. It has full visibility of every node and a dedicated administrative channel, so live changes take effect without restarting the system. Communication is encrypted by default, and the design deliberately avoids cloud lock-in or data harvesting.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- INTERCHANGING ARCHITECTURE SECTION: Modular_Architecture.jpg & Monolithic_Architecture.jpg side-by-side -->
+      <section id="architecture" class="architecture-section reveal-item">
+        <div class="arch-header">
+          <div>
+            <span class="eyebrow">Flexible Topology</span>
+            <h2 class="arch-title">Monolithic &amp; Modular <span class="gradient-text">Architectures</span></h2>
+            <p class="arch-subtitle">
+              Deploy everything on a single host or distribute services across dedicated machines. Watch the configurations interchange below or click to swap and inspect.
+            </p>
+          </div>
+
+          <div class="arch-controls">
+            <button type="button" id="swapArchBtn" class="arch-btn" aria-label="Swap architecture positions now">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Interchange Now</span>
+            </button>
+            <button type="button" id="toggleAutoSwapBtn" class="arch-btn arch-btn-secondary" aria-pressed="true">
+              <span class="auto-dot" id="autoSwapDot"></span>
+              <span id="autoSwapLabel">Auto-Interchange: ON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress bar for the interchanging animation timer -->
+        <div class="arch-cycle-track" aria-hidden="true">
+          <div class="arch-cycle-bar" id="archCycleBar"></div>
+        </div>
+
+        <!-- Side-by-side interchanging stage -->
+        <div class="arch-stage" id="archStage" data-state="modular-left">
+          <!-- Modular Architecture Card -->
+          <div class="arch-card arch-card-modular" id="cardModular" data-arch="modular">
+            <div class="arch-card-header">
+              <div class="arch-title-group">
+                <span class="arch-dot cyan"></span>
+                <h3>Modular Configuration</h3>
+              </div>
+              <span class="arch-role-badge" id="badgeModular">Spotlight View</span>
+            </div>
+            <div class="arch-img-container">
+              <img
+                src="./static_page_resources/Modular_Architecture.jpg"
+                alt="Forge Node Modular Configuration Architecture Diagram"
+                loading="lazy"
+                class="arch-img"
+              >
+            </div>
+            <div class="arch-card-footer">
+              <span>Distributed across Machine 1, Machine 2 (AAU), &amp; Machine 3 (MQTT Server)</span>
+              <button type="button" class="zoom-btn" data-zoom-src="./static_page_resources/Modular_Architecture.jpg" data-zoom-title="Modular Configuration">
+                Expand Diagram
+              </button>
+            </div>
+          </div>
+
+          <!-- Center Interchange Indicator -->
+          <div class="arch-interchange-hub" aria-hidden="true">
+            <div class="hub-ring">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Monolithic Architecture Card -->
+          <div class="arch-card arch-card-monolithic" id="cardMonolithic" data-arch="monolithic">
+            <div class="arch-card-header">
+              <div class="arch-title-group">
+                <span class="arch-dot orange"></span>
+                <h3>Monolithic Configuration</h3>
+              </div>
+              <span class="arch-role-badge" id="badgeMonolithic">Companion View</span>
+            </div>
+            <div class="arch-img-container">
+              <img
+                src="./static_page_resources/Monolithic_Architecture.jpg"
+                alt="Forge Node Monolithic Configuration Architecture Diagram"
+                loading="lazy"
+                class="arch-img"
+              >
+            </div>
+            <div class="arch-card-footer">
+              <span>Unified Monolithic Core running Nginx, Spring API, AU, AAU &amp; MQTT together</span>
+              <button type="button" class="zoom-btn" data-zoom-src="./static_page_resources/Monolithic_Architecture.jpg" data-zoom-title="Monolithic Configuration">
+                Expand Diagram
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CASCADE PAIR 3: Image 3.jpg + Paragraph 4 & Paragraph 5 -->
+      <article id="ecosystem" class="cascade-row cascade-step-3" data-cascade="3">
+        <div class="cascade-visual reveal-left">
+          <div class="image-card">
+            <div class="card-badge">03 // COMPLETE ECOSYSTEM</div>
+            <div class="image-wrapper">
+              <img src="./static_page_resources/3.jpg" alt="Developer operating the Forge Node web interface and stack" loading="lazy">
+            </div>
+            <div class="image-footer-bar">
+              <span class="mono-tag">Docker :10011</span>
+              <span class="status-indicator">Web UI + Android + AI Skill</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cascade-text-group dual-cascade">
+          <div class="text-card cascade-card-offset-1 reveal-right" style="--stagger: 0.1s;">
+            <div class="card-index">
+              <span class="index-num">04</span>
+              <span class="index-label">Self-Contained Stack &amp; AI Skill</span>
+            </div>
+            <p class="presentation-paragraph">
+              Forge Node ships as a complete, self-contained solution: firmware for the nodes, a modern web interface, an Android app, Docker support for easy local deployment, and even an AI skill that lets agents understand and operate the system. You can run everything locally today, split it into modular or remote groups when needed, or integrate your own software through language wrappers. The recommended path is simply building the Docker image and starting the stack — the web UI appears on port <code>10011</code>.
+            </p>
+          </div>
+
+          <div class="text-card cascade-card-offset-2 reveal-right" style="--stagger: 0.25s;">
+            <div class="card-index">
+              <span class="index-num">05</span>
+              <span class="index-label">Self-Hosted or Managed</span>
+            </div>
+            <p class="presentation-paragraph">
+              While the system is fully self-hostable and designed to run under your own control, work is also underway on a managed web service and hosting platform for Forge Node. The goal is to give people who prefer not to manage their own infrastructure an easy way to use the same privacy-first automation model, without giving up ownership of their logic or data.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- CASCADE PAIR 4: Image 4.jpg + Paragraph 6 -->
+      <article class="cascade-row cascade-row-reverse cascade-step-4" data-cascade="4">
+        <div class="cascade-visual reveal-right">
+          <div class="image-card accent-orange">
+            <div class="card-badge badge-orange">04 // BUILT FOR MAKERS</div>
+            <div class="image-wrapper">
+              <img src="./static_page_resources/4.jpg" alt="DIY builder experimenting with microcontrollers and custom hardware" loading="lazy">
+            </div>
+            <div class="image-footer-bar">
+              <span class="mono-tag">No Cloud Lock-In</span>
+              <span class="status-indicator orange">100% Ownership</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cascade-text-group">
+          <div class="text-card cascade-card-offset-1 reveal-left" style="--stagger: 0.12s;">
+            <div class="card-index">
+              <span class="index-num">06</span>
+              <span class="index-label">Unrestricted DIY &amp; Industrial Freedom</span>
+            </div>
+            <p class="presentation-paragraph">
+              Because the logic lives in an open, human-readable script and the entire stack runs under your control, Forge Node is especially suited for DIY builders, experimenters, and anyone who has grown tired of proprietary ecosystems that quietly collect data or restrict what you can change. There are no artificial feature gates and no forced cloud accounts. Whether you are automating lights and climate at home, monitoring a greenhouse, or building a small industrial setup, Forge Node lets you define the behavior once in plain language and keep evolving it — without ever losing ownership of the system.
+            </p>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Footer with Disclaimer Text from disclaimer.txt -->
+  <footer id="disclaimer" class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <span class="brand-dot cyan"></span>
+          <span class="brand-dot orange"></span>
+          <span class="brand-text"><span class="text-cyan">Forge</span> <span class="text-orange">Node</span></span>
+        </div>
+        <a href="#top" class="back-to-top">Back to Top &uarr;</a>
+      </div>
+
+      <div class="disclaimer-box">
+        <div class="disclaimer-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>Disclaimer</span>
+        </div>
+        <p class="disclaimer-text">
+          The information provided on this website is for general informational purposes only. Forge Node is an open-source project provided “as is,” without warranties of any kind, either express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, or non-infringement. Nothing on this site constitutes professional advice (technical, legal, or otherwise). You are solely responsible for evaluating the suitability of Forge Node for your own use and for any results obtained from its use. The developers and contributors assume no liability for any damages, data loss, or other issues that may arise from the use or inability to use the software or the information presented here. This website is a static informational site hosted on GitHub Pages. It does not collect personal data, and no warranties are made regarding the accuracy, completeness, or timeliness of the content. Links to external resources (including the GitHub repository) are provided for convenience; their content is outside our control. Use of Forge Node and reliance on any information from this site is at your own risk.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal for Full-Screen Architecture Diagram Inspection -->
+  <div class="lightbox" id="archLightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Architecture Diagram Viewer">
+    <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+    <div class="lightbox-content">
+      <div class="lightbox-bar">
+        <span class="lightbox-title" id="lightboxTitle">Architecture Diagram</span>
+        <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close diagram viewer">&times;</button>
+      </div>
+      <div class="lightbox-body">
+        <img src="" alt="Expanded Architecture Diagram" id="lightboxImg">
+      </div>
+    </div>
+  </div>
+
+  <script src="./static_page_resources/script.js"></script>
+</body>
+</html>
